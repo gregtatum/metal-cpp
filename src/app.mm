@@ -1,11 +1,53 @@
 #import "app.h"
 #import <Cocoa/Cocoa.h>
+#import <MetalKit/MetalKit.h>
 
 /**
  * The delegates handle various events and behavior that come from the
  * application. In this case, this handles the behavior of the overall app.
  *
  * https://developer.apple.com/documentation/appkit/nsapplicationdelegate?language=objc
+ *
+ * - applicationWillFinishLaunching:
+ * - applicationDidFinishLaunching:
+ * - applicationWillBecomeActive:
+ * - applicationDidBecomeActive:
+ * - applicationWillResignActive:
+ * - applicationDidResignActive:
+ * - applicationShouldTerminate:
+ * - applicationShouldTerminateAfterLastWindowClosed:
+ * - applicationWillTerminate:
+ * - applicationWillHide:
+ * - applicationDidHide:
+ * - applicationWillUnhide:
+ * - applicationDidUnhide:
+ * - applicationWillUpdate:
+ * - applicationDidUpdate:
+ * - applicationShouldHandleReopen:hasVisibleWindows:
+ * - applicationDockMenu:
+ * - application:willPresentError:
+ * - applicationDidChangeScreenParameters:
+ * - application:willContinueUserActivityWithType:
+ * - application:continueUserActivity:restorationHandler:
+ * - application:didFailToContinueUserActivityWithType:error:
+ * - application:didUpdateUserActivity:
+ * - application:didRegisterForRemoteNotificationsWithDeviceToken:
+ * - application:didFailToRegisterForRemoteNotificationsWithError:
+ * - application:didReceiveRemoteNotification:
+ * - application:userDidAcceptCloudKitShareWithMetadata:
+ * - application:openURLs:
+ * - application:openFile:
+ * - application:openFileWithoutUI:
+ * - application:openTempFile:
+ * - application:openFiles:
+ * - applicationOpenUntitledFile:
+ * - applicationShouldOpenUntitledFile:
+ * - application:printFile:
+ * - application:printFiles:withSettings:showPrintPanels:
+ * - application:didDecodeRestorableState:
+ * - application:willEncodeRestorableState:
+ * - applicationDidChangeOcclusionState:
+ * - application:delegateHandlesKey:
  */
 @interface AppDelegate : NSObject<NSApplicationDelegate> {
 }
@@ -23,38 +65,57 @@
  *
  * https://developer.apple.com/documentation/appkit/nswindowdelegate?language=objc
  */
-@interface WindowDelegate : NSObject<NSWindowDelegate> {
-}
+@interface WindowDelegate : NSObject<NSWindowDelegate>
+@property (unsafe_unretained, assign, nonatomic) viz::Tick* tick;
 @end
 
 @implementation WindowDelegate
-- (void)windowDidResize:(NSNotification*)notification
+- (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize
 {
-  // Implement any resize logic here.
+  _tick->width = frameSize.width;
+  _tick->height = frameSize.height;
+  return frameSize;
 }
 @end
 
 /**
- * The view is in charge of drawing on the screen. It can handle specific mouse
- * events that happen inside the view. These can then be passed on to our app.
+ * A specialized view that creates, configures, and displays Metal objects.
  *
+ * https://developer.apple.com/documentation/metalkit/mtkview?language=objc
  * https://developer.apple.com/documentation/appkit/nsview?language=objc
  */
-@interface View : NSView {
-}
+@interface View : MTKView
+
+- (id)initWithFrame:(CGRect)frame
+             tickFn:(viz::TickFn*)tickFn
+               tick:(viz::Tick*)tick;
 - (void)drawRect:(NSRect)rect;
+
+/**
+ * This is the C++ function for handling the draw loop. The loop is unowned.
+ */
+@property (unsafe_unretained, assign, nonatomic) viz::TickFn* tickFn;
+@property (unsafe_unretained, assign, nonatomic) viz::Tick* tick;
+
 @end
 
-@implementation View
+@implementation View {
+}
 //
 - (id)initWithFrame:(CGRect)frame
+             tickFn:(viz::TickFn*)tickFn
+               tick:(viz::Tick*)tick
 {
   self = [super initWithFrame:frame];
+
+  _tickFn = tickFn;
+  _tick = tick;
 
   // Setup the tracking area so that the mousemove events are used.
   NSTrackingArea* trackingArea = [[NSTrackingArea alloc]
     initWithRect:self.frame
-         options:NSTrackingActiveAlways | NSTrackingMouseMoved
+         options:NSTrackingActiveAlways | NSTrackingMouseMoved |
+                 NSTrackingMouseEnteredAndExited
            owner:self
         userInfo:nil];
 
@@ -64,45 +125,67 @@
 }
 
 /**
- * This is the logic for drawing the rectangle, it only gets called when needed.
+ * This method is called for every draw tick.
+ *
+ * See "Configuring the Drawing Behavior":
+ * https://developer.apple.com/documentation/metalkit/mtkview?language=objc
  */
 - (void)drawRect:(NSRect)rect
 {
-  // get the size of the app's window and view objects
-  float width = [self bounds].size.width;
-  float height = [self bounds].size.height;
-
-  // Draw the outer box.
-  [[NSColor colorWithCalibratedRed:0.2f green:0.2f blue:0.2f alpha:1.0f] set];
-  NSRectFill([self bounds]);
-
-  // Generate a random grey color, so that we know when this is updating.
-  float color = (float)rand() / RAND_MAX;
-
-  // Draw the inner box.
-  [[NSColor colorWithCalibratedRed:color green:color blue:color
-                             alpha:1.0f] set];
-  NSRectFill(
-    NSMakeRect(width * 0.25, height * 0.25, width * 0.5, height * 0.5));
+  _tick->Update();
+  (*_tickFn)(*_tick);
 }
 
 - (void)mouseDown:(NSEvent*)event
 {
-  printf("mouse down\n");
-  // Redraw the rectangle.
-  [self setNeedsDisplay:YES];
+  _tick->isMouseDown = true;
+}
+
+- (void)mouseUp:(NSEvent*)event
+{
+  _tick->isMouseDown = false;
 }
 
 - (void)mouseMoved:(NSEvent*)event
 {
-  printf("mouse moved\n");
-  // Redraw the rectangle.
-  [self setNeedsDisplay:YES];
+  NSPoint position = [event locationInWindow];
+  _tick->mouse = viz::Vec2<double>{ position.x, position.y };
 }
+
+- (void)mouseExited:(NSEvent*)event
+{
+  _tick->mouse = {};
+}
+
 @end
 
 void
-initApp()
+viz::Tick::Update()
+{
+  // Update timing information.
+  auto previousTime = currentTime;
+  auto currentTime = std::chrono::system_clock::now();
+
+  if (hasRunOnce) {
+    // Ensure the dt and milliseconds are implemented correctly
+    time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime -
+                                                                 startTime)
+             .count();
+    dt = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime -
+                                                               currentTime)
+           .count();
+
+    // The wall clock is not guaranteed to be monotonically increasing.
+    dt = fmax(dt, 0);
+
+    ++tick;
+  }
+
+  hasRunOnce = true;
+}
+
+void
+viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
 {
   // The NSApplication is an object that manages an app’s main event loop and
   // resources used by all of that app’s objects.
@@ -134,13 +217,21 @@ initApp()
 
   [window setTitle:@"My App"];
 
+  // The tick is an object that is re-used on every frame draw call that
+  // contains the current tick information.
+  viz::Tick tick{ frame.size.width, frame.size.height };
+
   // The delegate handles events related to the window.
   WindowDelegate* windowDelegate = [WindowDelegate new];
+  [windowDelegate setTick:&tick];
   [window setDelegate:windowDelegate];
 
   // The view that draws the contents of the window.
-  NSView* view = [[View alloc] initWithFrame:frame];
+  MTKView* view = [[View alloc] initWithFrame:frame tickFn:tickFn tick:&tick];
   [window setContentView:view];
+
+  // Pass our metal device to the view.
+  view.device = (__bridge id<MTLDevice>)device.GetPtr();
 
   // Show the window.
   [window makeKeyAndOrderFront:nil];
