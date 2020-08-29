@@ -3,20 +3,16 @@
 #include "mtlpp/mtlpp.hpp"
 #include "termcolor.hpp"
 
-const char source[] =
-#include "./render-pipeline.metal"
-  ;
-
-void
-print_error(const char* name, const char* error)
-{
-  std::cout << termcolor::cyan << name << termcolor::reset << std::endl;
-  std::cout << error << std::endl;
-}
-
+/**
+ * This example shows creating a basic rendering pipeline.
+ */
 int
 main()
 {
+  const char source[] =
+#include "./render-pipeline.metal"
+    ;
+
   const float verteces[] = {
     0.0f, 1.0f, 0.0f, -1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f,
   };
