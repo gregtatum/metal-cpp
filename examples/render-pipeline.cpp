@@ -1,9 +1,18 @@
+#include "app.h"
+#include "metal.h"
 #include "mtlpp/mtlpp.hpp"
-#include "window.h"
+#include "termcolor.hpp"
 
-const char[] source =
+const char source[] =
 #include "./render-pipeline.metal"
   ;
+
+void
+print_error(const char* name, const char* error)
+{
+  std::cout << termcolor::cyan << name << termcolor::reset << std::endl;
+  std::cout << error << std::endl;
+}
 
 int
 main()
@@ -15,7 +24,14 @@ main()
   auto device = mtlpp::Device::CreateSystemDefaultDevice();
   auto commandQueue = device.NewCommandQueue();
 
-  auto library = device.NewLibrary(source, mtlpp::CompileOptions(), nullptr);
+  auto [library, libraryError] =
+    viz::CreateLibrary(device, source, mtlpp::CompileOptions());
+
+  if (libraryError) {
+    libraryError.print();
+    return 1;
+  }
+
   auto vert = library.NewFunction("vert");
   auto frag = library.NewFunction("frag");
 
@@ -35,10 +51,21 @@ main()
     mtlpp::PixelFormat::BGRA8Unorm);
 
   auto pipeline = device.NewRenderPipelineState(options, nullptr);
-  auto render = [](const Window& window) {
-    //
-  };
-  Window win(device, &render, 320, 240);
 
-  return 0;
+  viz::TickFn tickFn = [&](viz::Tick& tick) -> void {
+    mtlpp::CommandBuffer commandBuffer = commandQueue.CommandBuffer();
+
+    mtlpp::RenderCommandEncoder renderCommandEncoder =
+      commandBuffer.RenderCommandEncoder(tick.renderPassDescriptor);
+    renderCommandEncoder.SetRenderPipelineState(pipeline);
+    renderCommandEncoder.SetVertexBuffer(vertexBuffer, 0, 0);
+    renderCommandEncoder.Draw(mtlpp::PrimitiveType::Triangle, 0, 3);
+    renderCommandEncoder.EndEncoding();
+    commandBuffer.Present(tick.drawable);
+
+    commandBuffer.Commit();
+    commandBuffer.WaitUntilCompleted();
+  };
+
+  viz::InitApp(device, &tickFn);
 }

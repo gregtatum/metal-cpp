@@ -132,7 +132,19 @@
  */
 - (void)drawRect:(NSRect)rect
 {
+
+  if (self.currentDrawable == nil || self.currentRenderPassDescriptor == nil) {
+    // Only draw this frame if these are available.
+    return;
+  }
+
+  // Give the tick the information it needs about the current view.
+  _tick->drawable = ns::Handle{ (__bridge void*)self.currentDrawable };
+  _tick->renderPassDescriptor =
+    ns::Handle{ (__bridge void*)self.currentRenderPassDescriptor };
+
   _tick->Update();
+
   (*_tickFn)(*_tick);
 }
 

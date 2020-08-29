@@ -47,6 +47,9 @@ public:
 
   bool hasRunOnce = false;
 
+  mtlpp::Drawable drawable;
+  mtlpp::RenderPassDescriptor renderPassDescriptor;
+
 private:
   WallClock startTime = std::chrono::system_clock::now();
   WallClock currentTime = std::chrono::system_clock::now();
