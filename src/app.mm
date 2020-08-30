@@ -70,10 +70,10 @@
 @end
 
 @implementation WindowDelegate
-- (NSSize)windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize
+- (NSSize)windowWillResize:(NSWindow*)window toSize:(NSSize)frameSize
 {
-  _tick->width = frameSize.width;
-  _tick->height = frameSize.height;
+  _tick->width = window.backingScaleFactor * frameSize.width;
+  _tick->height = window.backingScaleFactor * frameSize.height;
   return frameSize;
 }
 @end
@@ -161,7 +161,9 @@
 - (void)mouseMoved:(NSEvent*)event
 {
   NSPoint position = [event locationInWindow];
-  _tick->mouse = viz::Vec2<double>{ position.x, position.y };
+  _tick->mouse =
+    viz::Vec2<double>{ position.x * self.window.backingScaleFactor,
+                       position.y * self.window.backingScaleFactor };
 }
 
 - (void)mouseExited:(NSEvent*)event
@@ -231,7 +233,8 @@ viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
 
   // The tick is an object that is re-used on every frame draw call that
   // contains the current tick information.
-  viz::Tick tick{ frame.size.width, frame.size.height };
+  viz::Tick tick{ frame.size.width * window.backingScaleFactor,
+                  frame.size.height * window.backingScaleFactor };
 
   // The delegate handles events related to the window.
   WindowDelegate* windowDelegate = [WindowDelegate new];

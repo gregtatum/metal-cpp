@@ -1,5 +1,7 @@
 #include <Foundation/NSError.h>
 #include <Metal/MTLDevice.h>
+#include <mach-o/dyld.h>   //_NSGetExecutablePath
+#include <sys/syslimits.h> // PATH_MAX
 // Make sure including metal.h is last, otherwise there is ambiguous
 // resolution of some internal types.
 #include "metal.h"
@@ -46,9 +48,9 @@ viz::Error::print()
 }
 
 std::pair<Library, viz::Error>
-viz::CreateLibrary(Device device,
-                   const char* source,
-                   const CompileOptions& options)
+viz::CreateLibraryFromSource(Device device,
+                             const char* source,
+                             const CompileOptions& options)
 {
   // Error
   NSError* error = nil;
@@ -61,3 +63,48 @@ viz::CreateLibrary(Device device,
   return std::pair(ns::Handle{ (__bridge void*)library },
                    viz::Error(ns::Handle{ (__bridge void*)error }));
 };
+
+std::pair<mtlpp::Library, viz::Error>
+viz::CreateLibraryFromMetalLib(Device device, const char* metallib)
+{
+  // Error
+  NSError* error = nil;
+
+  id<MTLLibrary> library = [(__bridge id<MTLDevice>)device.GetPtr()
+    newLibraryWithFile:[NSString stringWithUTF8String:metallib]
+                 error:&error];
+
+  return std::pair(ns::Handle{ (__bridge void*)library },
+                   viz::Error(ns::Handle{ (__bridge void*)error }));
+}
+
+/**
+ * This is a macOS-specific way to get the executable path.
+ *
+ * https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
+ */
+std::string
+getExecutablePath()
+{
+  char path[PATH_MAX + 1];
+  uint32_t length = PATH_MAX;
+  int result = _NSGetExecutablePath(path, &length);
+  assert(result != -1);
+  return std::string{ path };
+}
+
+std::pair<mtlpp::Library, viz::Error>
+viz::CreateLibraryForExample(Device device)
+{
+  // Error
+  NSError* error = nil;
+
+  auto path = getExecutablePath() + ".metallib";
+
+  id<MTLLibrary> library = [(__bridge id<MTLDevice>)device.GetPtr()
+    newLibraryWithFile:[NSString stringWithUTF8String:path.c_str()]
+                 error:&error];
+
+  return std::pair(ns::Handle{ (__bridge void*)library },
+                   viz::Error(ns::Handle{ (__bridge void*)error }));
+}

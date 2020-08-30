@@ -1,5 +1,4 @@
 #include "mtlpp/mtlpp.hpp"
-#include <stdexcept>
 
 using namespace mtlpp;
 
@@ -22,6 +21,23 @@ public:
 };
 
 std::pair<mtlpp::Library, viz::Error>
-CreateLibrary(Device device, const char* source, const CompileOptions& options);
+CreateLibraryFromMetalLib(Device device, const char* metallib);
+
+std::pair<mtlpp::Library, viz::Error>
+CreateLibraryFromSource(Device device,
+                        const char* source,
+                        const CompileOptions& options);
+
+/**
+ * This function hooks up a metallib file to the current example. It assumes the
+ * metallib was successfully compiled, and is located as a sibling in the same
+ * directory as the binary. ".metallib" will be added to the binary name.
+ *
+ * e.g.
+ * /path/to/bin/example
+ * /path/to/bin/example.metallib
+ */
+std::pair<mtlpp::Library, viz::Error>
+CreateLibraryForExample(Device device);
 
 } // viz
