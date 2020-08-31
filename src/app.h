@@ -32,7 +32,8 @@ public:
   void Update();
 
   // The amount of time passed in milliseconds.
-  double time = 0;
+  double milliseconds = 0;
+  double seconds = 0;
   // The change in time in milliseconds.
   double dt = 16.666;
   // A generational counter for how many ticks have been called.

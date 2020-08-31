@@ -14,8 +14,10 @@ vert(const device packed_float3* vertexArray [[buffer(0)]],
      unsigned int vID [[vertex_id]])
 {
   Varying varying;
-  varying.position =
-    float4(vertexArray[vID].xy + uniforms.center, vertexArray[vID].z, 1.0);
+
+  float3 position = vertexArray[vID];
+  varying.position = uniforms.projection * uniforms.view * uniforms.model *
+                     float4(position, 1.0);
   varying.color = (static_cast<half4>(varying.position) + 1.0) * 0.5;
 
   return varying;

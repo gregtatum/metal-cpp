@@ -182,9 +182,10 @@ viz::Tick::Update()
 
   if (hasRunOnce) {
     // Ensure the dt and milliseconds are implemented correctly
-    time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime -
-                                                                 startTime)
-             .count();
+    milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     currentTime - startTime)
+                     .count();
+    seconds = milliseconds / 1000;
     dt = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime -
                                                                currentTime)
            .count();
@@ -244,6 +245,10 @@ viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
   // The view that draws the contents of the window.
   MTKView* view = [[View alloc] initWithFrame:frame tickFn:tickFn tick:&tick];
   [window setContentView:view];
+  view.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+  // Reset the depth buffer on every draw. 1.0 is furthest away, and 0 is
+  // closest.
+  view.clearDepth = 1.0;
 
   // Pass our metal device to the view.
   view.device = (__bridge id<MTLDevice>)device.GetPtr();

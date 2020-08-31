@@ -3,7 +3,7 @@ CC := clang++
 MIN_MAC_VER := 10.12
 CPPFLAGS := -std=c++2a -mmacosx-version-min=$(MIN_MAC_VER) -g # TODO: -Wall -Werror
 OBJCFLAGS := -std=c++2a -x objective-c++ -mmacosx-version-min=$(MIN_MAC_VER) -g
-LDFLAGS := -framework Metal -framework MetalKit -framework Cocoa -framework CoreFoundation -fobjc-link-runtime
+LDFLAGS := -framework GLKit -framework Metal -framework MetalKit -framework Cocoa -framework CoreFoundation -fobjc-link-runtime
 INCLUDES := -Iincludes -Isrc
 
 SRC_DIR := src
