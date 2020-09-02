@@ -1,5 +1,5 @@
-#include "app.h"
-#include "metal.h"
+#include "cocoa-app.h"
+#include "metal-objc.h"
 #include "mtlpp/mtlpp.hpp"
 #include "termcolor.hpp"
 

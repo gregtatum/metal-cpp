@@ -4,6 +4,7 @@
 #include <chrono>
 #include <functional>
 #include <optional>
+#include <vector>
 
 namespace viz {
 

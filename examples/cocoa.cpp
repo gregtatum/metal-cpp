@@ -1,4 +1,4 @@
-#include "app.h"
+#include "cocoa.h"
 #include "mtlpp/mtlpp.hpp"
 #include <functional>
 #include <stdio.h> // printf

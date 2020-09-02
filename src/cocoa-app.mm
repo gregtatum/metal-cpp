@@ -1,4 +1,4 @@
-#import "app.h"
+#import "cocoa-app.h"
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
 

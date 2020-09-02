@@ -1,6 +1,7 @@
 CC := clang++
 
-MIN_MAC_VER := 10.12
+# This mac version has std::optional::value()
+MIN_MAC_VER := 10.14
 CPPFLAGS := -std=c++2a -mmacosx-version-min=$(MIN_MAC_VER) -g # TODO: -Wall -Werror
 OBJCFLAGS := -std=c++2a -x objective-c++ -mmacosx-version-min=$(MIN_MAC_VER) -g
 LDFLAGS := -framework GLKit -framework Metal -framework MetalKit -framework Cocoa -framework CoreFoundation -fobjc-link-runtime
@@ -41,7 +42,7 @@ bin/%: examples/%.cpp $(CODE_OBJECTS) bin examples/%.metal bin/%.metallib
 
 # Compile the intermediate representation of metal files.
 build/%.air: examples/%.metal
-	xcrun -sdk macosx metal -c $< -o $@
+	xcrun -sdk macosx metal $(INCLUDES) -c $< -o $@
 
 # Build the final metallib files.
 bin/%.metallib: build/%.air

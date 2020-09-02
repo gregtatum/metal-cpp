@@ -1,5 +1,7 @@
+#pragma once
 #include "mtlpp/mtlpp.hpp"
-
+#include <span>
+#include <vector>
 using namespace mtlpp;
 
 namespace viz {
@@ -39,5 +41,48 @@ CreateLibraryFromSource(Device device,
  */
 std::pair<mtlpp::Library, viz::Error>
 CreateLibraryForExample(Device device);
+
+/**
+ * Creates a metal Buffer with a std::vector or std::span. It handles computing
+ * the byte size.
+ */
+template<typename List>
+mtlpp::Buffer
+CreateBufferFromList(Device& device, mtlpp::ResourceOptions options, List& list)
+{
+  uint32_t bytes = sizeof(list[0]) * list.size();
+  return device.NewBuffer(&list[0], bytes, options);
+}
+
+template<typename T>
+std::pair<mtlpp::Buffer, T*>
+CreateBufferFromStruct(Device& device,
+                       mtlpp::ResourceOptions options,
+                       T&& value)
+{
+
+  mtlpp::Buffer buffer = device.NewBuffer(sizeof(T), options);
+  T* pointer = static_cast<T*>(buffer.GetContents());
+  *pointer = value;
+
+  return { buffer, pointer };
+}
+
+template<typename T>
+mtlpp::Buffer
+CreateBufferFromStructType(Device& device, mtlpp::ResourceOptions options)
+{
+
+  return device.NewBuffer(sizeof(T), options);
+}
+
+template<typename T>
+T*
+InitializeBuffer(mtlpp::Buffer& buffer, T&& value)
+{
+  T* pointer = static_cast<T*>(buffer.GetContents());
+  *pointer = value;
+  return pointer;
+}
 
 } // viz

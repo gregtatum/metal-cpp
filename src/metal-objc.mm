@@ -4,7 +4,7 @@
 #include <sys/syslimits.h> // PATH_MAX
 // Make sure including metal.h is last, otherwise there is ambiguous
 // resolution of some internal types.
-#include "metal.h"
+#include "metal-objc.h"
 #include "termcolor.hpp"
 
 viz::Error::operator bool() const
