@@ -13,8 +13,7 @@ const example = getExample();
 let exampleSubProcess;
 let isClosingSubProcess = false;
 
-build();
-runExample();
+buildAndRun();
 watchFiles();
 
 process.on("SIGINT", function () {
@@ -23,13 +22,21 @@ process.on("SIGINT", function () {
   process.exit(0);
 });
 
+function buildAndRun() {
+  if (build()) {
+    runExample();
+  }
+}
+
 function build() {
   console.log("🛠  Building " + example);
   try {
     execSync(`make ./bin/${example}`, { cwd: rootPath, stdio: "inherit" });
   } catch (error) {
     console.error("🛑 Could not build " + example);
+    return false;
   }
+  return true;
 }
 
 function closeSubprocess() {
@@ -100,8 +107,7 @@ function handleFileChange(...args) {
       }
       exampleSubProcess = null;
     }
-    build();
-    runExample();
+    buildAndRun();
   }
 }
 

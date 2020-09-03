@@ -1,5 +1,6 @@
 #pragma once
 #include "mtlpp/mtlpp.hpp"
+#include <exception>
 #include <span>
 #include <vector>
 using namespace mtlpp;
@@ -10,7 +11,7 @@ namespace viz {
  * This class encapsulates the underlying NSError object. I wasn't satisfied
  * with the way mtlpp was handling this.
  */
-class Error
+class Error : public std::exception
 {
 public:
   // Make sure and move the error, or else it will ge re-initialized.
@@ -39,7 +40,7 @@ CreateLibraryFromSource(Device device,
  * /path/to/bin/example
  * /path/to/bin/example.metallib
  */
-std::pair<mtlpp::Library, viz::Error>
+mtlpp::Library
 CreateLibraryForExample(Device device);
 
 /**

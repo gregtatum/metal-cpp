@@ -93,18 +93,22 @@ getExecutablePath()
   return std::string{ path };
 }
 
-std::pair<mtlpp::Library, viz::Error>
+mtlpp::Library
 viz::CreateLibraryForExample(Device device)
 {
   // Error
-  NSError* error = nil;
+  NSError* nsError = nil;
 
   auto path = getExecutablePath() + ".metallib";
 
   id<MTLLibrary> library = [(__bridge id<MTLDevice>)device.GetPtr()
     newLibraryWithFile:[NSString stringWithUTF8String:path.c_str()]
-                 error:&error];
+                 error:&nsError];
 
-  return std::pair(ns::Handle{ (__bridge void*)library },
-                   viz::Error(ns::Handle{ (__bridge void*)error }));
+  auto error = viz::Error(ns::Handle{ (__bridge void*)nsError });
+  if (error) {
+    throw error;
+  }
+
+  return ns::Handle{ (__bridge void*)library };
 }
