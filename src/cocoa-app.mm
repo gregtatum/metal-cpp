@@ -241,6 +241,7 @@ viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
   WindowDelegate* windowDelegate = [WindowDelegate new];
   [windowDelegate setTick:&tick];
   [window setDelegate:windowDelegate];
+  [window setFrameAutosaveName:@"Main Window"];
 
   // The view that draws the contents of the window.
   MTKView* view = [[View alloc] initWithFrame:frame tickFn:tickFn tick:&tick];

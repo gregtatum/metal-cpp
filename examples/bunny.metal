@@ -18,7 +18,7 @@ vert(const device packed_float3* vertexArray [[buffer(0)]],
   float3 brightness = dot(normal, normalize(float3(-1.0, -1.0, -0.5)));
   float3 color = hue * mix(0.4, 0.8, brightness);
 
-  varying.color = half4(static_cast<half3>(color), 1.0);
+  varying.color = half4(static_cast<half3>(color) * 1.8, 1.0);
   varying.position = uniforms.matrices.modelViewProj * float4(position, 1.0);
 
   return varying;

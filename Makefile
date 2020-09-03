@@ -67,3 +67,18 @@ clean:
 	@echo " Cleaning...";
 	$(RM) -r ./bin
 	$(RM) -r ./build
+
+# The scripts directory needs the node modules installed.
+./scripts/node_modules:
+	cd scripts && npm install
+
+# Enable live-reloading. This is built with a node script that orchestrates things.
+# Run `make watch EXAMPLE=bunny` where bunny is the name of the example.
+.PHONY: watch
+watch: ./scripts/node_modules
+ifndef EXAMPLE
+	@echo Error: An EXAMPLE is required.
+	@echo Usage: make watch EXAMPLE=bunny
+else
+	node ./scripts/watch ${EXAMPLE}
+endif
