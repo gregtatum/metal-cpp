@@ -86,6 +86,12 @@ clean:
 	$(RM) -r ./bin
 	$(RM) -r ./build
 
+.PHONY: clean-cpp
+clean-cpp:
+	@echo " Cleaning cpp object files and binaries ...";
+	$(RM) -r ./bin
+	$(RM) -r ./build/*.cpp.o
+
 # The scripts directory needs the node modules installed.
 ./scripts/node_modules:
 	cd scripts && npm install
