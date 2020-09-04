@@ -2,9 +2,27 @@ CC := clang++
 
 # This mac version has std::optional::value()
 MIN_MAC_VER := 10.14
-CPPFLAGS := -std=c++2a -mmacosx-version-min=$(MIN_MAC_VER) -g # TODO: -Wall -Werror
-OBJCFLAGS := -std=c++2a -x objective-c++ -mmacosx-version-min=$(MIN_MAC_VER) -g
-LDFLAGS := -framework GLKit -framework Metal -framework MetalKit -framework Cocoa -framework CoreFoundation -fobjc-link-runtime
+CPPFLAGS := \
+	-std=c++2a \
+	-mmacosx-version-min=$(MIN_MAC_VER) -g \
+	-Wno-unused-command-line-argument \
+	# TODO: -Wall -Werror
+
+OBJCFLAGS := \
+	-std=c++2a \
+	-x \
+	objective-c++ \
+	-mmacosx-version-min=$(MIN_MAC_VER) \
+	-g
+
+LDFLAGS := \
+	-framework Cocoa \
+	-framework CoreFoundation \
+	-framework GLKit \
+	-framework Metal \
+	-framework MetalKit \
+	-fobjc-link-runtime
+
 INCLUDES := -Iincludes -Isrc
 
 SRC_DIR := src
