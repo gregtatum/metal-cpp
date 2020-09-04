@@ -64,4 +64,78 @@ InitializeDepthStencil(mtlpp::Device& device,
   return device.NewDepthStencilState(depthDescriptor);
 }
 
+struct RenderCommandInitializer
+{
+  // Non-optional:
+  mtlpp::CommandQueue& commandQueue;
+  mtlpp::RenderPipelineState& pipeline;
+  mtlpp::RenderPassDescriptor& renderPassDescriptor;
+  mtlpp::Drawable& drawable;
+
+  // DrawIndexed only support until otherwise needed.
+  mtlpp::PrimitiveType primitiveType;
+  uint32_t indexCount;
+  mtlpp::IndexType indexType;
+  const mtlpp::Buffer& indexBuffer;
+
+  // Optional:
+  std::optional<mtlpp::CullMode> cullMode;
+  std::optional<mtlpp::DepthStencilState> depthStencilState;
+  std::optional<std::vector<mtlpp::Buffer*>> vertexBuffers;
+  std::optional<std::vector<mtlpp::Buffer*>> fragmentBuffers;
+};
+
+void
+Render(RenderCommandInitializer&& initializer)
+{
+  mtlpp::CommandBuffer commandBuffer = initializer.commandQueue.CommandBuffer();
+
+  mtlpp::RenderCommandEncoder renderCommandEncoder =
+    commandBuffer.RenderCommandEncoder(initializer.renderPassDescriptor);
+
+  if (initializer.cullMode) {
+    printf("initializer.cullMode\n");
+    renderCommandEncoder.SetCullMode(initializer.cullMode.value());
+  }
+
+  if (initializer.depthStencilState) {
+    printf("initializer.depthStencilState\n");
+    renderCommandEncoder.SetDepthStencilState(
+      initializer.depthStencilState.value());
+  }
+
+  if (initializer.vertexBuffers) {
+    auto& buffers = initializer.vertexBuffers.value();
+    for (size_t i = 0; i < buffers.size(); i++) {
+      auto& buffer = buffers[i];
+      printf("initializer.vertexBuffers %zu\n", i);
+      ReleaseAssert(buffer, "VertexBuffer must exist.");
+      renderCommandEncoder.SetVertexBuffer(*buffer, 0, i);
+    }
+  }
+
+  if (initializer.fragmentBuffers) {
+    auto& buffers = initializer.fragmentBuffers.value();
+    for (size_t i = 0; i < buffers.size(); i++) {
+      auto& buffer = buffers[i];
+      printf("initializer.fragmentBuffers %zu\n", i);
+      ReleaseAssert(buffer, "VertexBuffer must exist.");
+      renderCommandEncoder.SetFragmentBuffer(*buffer, 0, i);
+    }
+  }
+
+  renderCommandEncoder.DrawIndexed(initializer.primitiveType,
+                                   initializer.indexCount,
+                                   initializer.indexType,
+                                   initializer.indexBuffer,
+                                   // offset
+                                   0);
+
+  renderCommandEncoder.EndEncoding();
+  commandBuffer.Present(initializer.drawable);
+
+  commandBuffer.Commit();
+  commandBuffer.WaitUntilCompleted();
+}
+
 } // viz

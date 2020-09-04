@@ -20,7 +20,7 @@ struct Buffers
   mtlpp::Buffer cells;
   mtlpp::Buffer normals;
   mtlpp::Buffer uniforms;
-  size_t cellsSize;
+  uint32_t cellsSize;
 };
 
 Buffers
@@ -36,7 +36,7 @@ CreateBuffers(Device& device)
     .cells = CreateBufferFromList(device, cpuWrite, cells),
     .normals = CreateBufferFromList(device, cpuWrite, normals),
     .uniforms = CreateBufferFromStructType<Uniforms>(device, cpuWrite),
-    .cellsSize = cells.size(),
+    .cellsSize = static_cast<uint32_t>(cells.size()),
   };
 }
 
@@ -91,30 +91,24 @@ main()
 
       uniforms->matrices = GetModelMatrices(model, view, projection);
 
-      mtlpp::CommandBuffer commandBuffer = commandQueue.CommandBuffer();
-
-      mtlpp::RenderCommandEncoder renderCommandEncoder =
-        commandBuffer.RenderCommandEncoder(tick.renderPassDescriptor);
-      renderCommandEncoder.SetRenderPipelineState(pipeline);
-      renderCommandEncoder.SetCullMode(mtlpp::CullMode::Front);
-      renderCommandEncoder.SetDepthStencilState(depthState);
-
-      renderCommandEncoder.SetVertexBuffer(buffers.positions, 0, 0);
-      renderCommandEncoder.SetVertexBuffer(buffers.normals, 0, 1);
-      renderCommandEncoder.SetVertexBuffer(buffers.uniforms, 0, 2);
-
-      renderCommandEncoder.SetFragmentBuffer(buffers.uniforms, 0, 0);
-      renderCommandEncoder.DrawIndexed(mtlpp::PrimitiveType::Triangle,
-                                       buffers.cellsSize,
-                                       mtlpp::IndexType::UInt32,
-                                       buffers.cells,
-                                       // offset
-                                       0);
-      renderCommandEncoder.EndEncoding();
-      commandBuffer.Present(tick.drawable);
-
-      commandBuffer.Commit();
-      commandBuffer.WaitUntilCompleted();
+      Render({
+        .commandQueue = commandQueue,
+        .pipeline = pipeline,
+        .renderPassDescriptor = tick.renderPassDescriptor,
+        .drawable = tick.drawable,
+        .primitiveType = mtlpp::PrimitiveType::Triangle,
+        .indexCount = buffers.cellsSize,
+        .indexType = mtlpp::IndexType::UInt32,
+        .indexBuffer = buffers.cells,
+        .cullMode = mtlpp::CullMode::Front,
+        .depthStencilState = depthState,
+        .vertexBuffers = std::vector({
+          &buffers.positions,
+          &buffers.normals,
+          &buffers.uniforms,
+        }),
+        .fragmentBuffers = std::vector({ &buffers.uniforms }),
+      });
     };
 
     InitApp(device, &tickFn);

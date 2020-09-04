@@ -8,6 +8,8 @@
 
 // This is the main dependency.
 #include "mtlpp/mtlpp.hpp"
+// Assertions are general-purpose.
+#include "viz-assert.h"
 // Includes the Cocoa bindings to start the app.
 #include "cocoa-app.h"
 // Includes helpful utils to work with the metal API, with no Objective C.
