@@ -54,24 +54,21 @@ main()
     // This creates a render pipeline configuration that can be used to create a
     // pipeline state object. Right now, we only care about setting up a vertex
     // and fragment shader.
+    auto pipeline = viz::InitializeRenderPipeline({
+      .device = device,
+      .label = "Basic rendering function",
+      .vertexFunction = library.NewFunction("vert"),
+      .fragmentFunction = library.NewFunction("frag"),
+      .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
+      .colorAttachmentPixelFormats =
+        std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
+    });
 
-    auto pipeline = viz::InitializeRenderPipeline(
-      device,
-      {
-        .label = "Basic rendering function",
-        .vertexFunction = library.NewFunction("vert"),
-        .fragmentFunction = library.NewFunction("frag"),
-        .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
-        .colorAttachmentPixelFormats =
-          std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
-      });
-
-    auto depthState = InitializeDepthStencil(
-      device,
-      {
-        .depthCompareFunction = mtlpp::CompareFunction::LessEqual,
-        .depthWriteEnabled = true,
-      });
+    auto depthState = InitializeDepthStencil({
+      .device = device,
+      .depthCompareFunction = mtlpp::CompareFunction::LessEqual,
+      .depthWriteEnabled = true,
+    });
 
     auto cameraHeight = 1;
     auto view = Matrix4::MakeLookAt(
@@ -92,22 +89,27 @@ main()
       uniforms->matrices = GetModelMatrices(model, view, projection);
 
       Render({
+        // Required pieces.
         .commandQueue = commandQueue,
-        .pipeline = pipeline,
+        .renderPipelineState = pipeline,
         .renderPassDescriptor = tick.renderPassDescriptor,
         .drawable = tick.drawable,
-        .primitiveType = mtlpp::PrimitiveType::Triangle,
-        .indexCount = buffers.cellsSize,
-        .indexType = mtlpp::IndexType::UInt32,
-        .indexBuffer = buffers.cells,
-        .cullMode = mtlpp::CullMode::Front,
-        .depthStencilState = depthState,
+
+        // DrawIndexed options plus buffers.
+        .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
+        .drawIndexCount = buffers.cellsSize,
+        .drawIndexType = mtlpp::IndexType::UInt32,
+        .drawIndexBuffer = buffers.cells,
         .vertexBuffers = std::vector({
           &buffers.positions,
           &buffers.normals,
           &buffers.uniforms,
         }),
         .fragmentBuffers = std::vector({ &buffers.uniforms }),
+
+        // General draw config
+        .cullMode = mtlpp::CullMode::Front,
+        .depthStencilState = depthState,
       });
     };
 

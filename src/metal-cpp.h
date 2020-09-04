@@ -7,6 +7,7 @@ namespace viz {
 
 struct RenderPipelineInitializer
 {
+  mtlpp::Device& device;
   std::optional<const char*> label = std::nullopt;
   std::optional<const mtlpp::Function> vertexFunction = std::nullopt;
   std::optional<const mtlpp::Function> fragmentFunction = std::nullopt;
@@ -21,8 +22,7 @@ struct RenderPipelineInitializer
  * object.
  */
 mtlpp::RenderPipelineState
-InitializeRenderPipeline(mtlpp::Device& device,
-                         RenderPipelineInitializer&& initializer)
+InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
 {
   mtlpp::RenderPipelineDescriptor descriptor;
 
@@ -40,94 +40,105 @@ InitializeRenderPipeline(mtlpp::Device& device,
       initializer.colorAttachmentPixelFormats[i]);
   }
 
-  return device.NewRenderPipelineState(descriptor, nullptr);
+  return initializer.device.NewRenderPipelineState(descriptor, nullptr);
 }
 
 struct DepthStencilInitializer
 {
+  mtlpp::Device& device;
   std::optional<mtlpp::CompareFunction> depthCompareFunction = std::nullopt;
   std::optional<bool> depthWriteEnabled = std::nullopt;
 };
 
 mtlpp::DepthStencilState
-InitializeDepthStencil(mtlpp::Device& device,
-                       DepthStencilInitializer&& initializer)
+InitializeDepthStencil(DepthStencilInitializer&& initializer)
 {
   mtlpp::DepthStencilDescriptor depthDescriptor{};
 
-  if (initializer.depthCompareFunction)
-    depthDescriptor.SetDepthCompareFunction(
-      initializer.depthCompareFunction.value());
-  if (initializer.depthWriteEnabled)
-    depthDescriptor.SetDepthWriteEnabled(initializer.depthWriteEnabled.value());
+  auto& [device, depthCompareFunction, depthWriteEnabled] = initializer;
+
+  if (depthCompareFunction)
+    depthDescriptor.SetDepthCompareFunction(depthCompareFunction.value());
+  if (depthWriteEnabled)
+    depthDescriptor.SetDepthWriteEnabled(depthWriteEnabled.value());
 
   return device.NewDepthStencilState(depthDescriptor);
 }
 
-struct RenderCommandInitializer
+struct RenderInitializer
 {
-  // Non-optional:
+  // Required dependencies.
   mtlpp::CommandQueue& commandQueue;
-  mtlpp::RenderPipelineState& pipeline;
+  mtlpp::RenderPipelineState& renderPipelineState;
   mtlpp::RenderPassDescriptor& renderPassDescriptor;
   mtlpp::Drawable& drawable;
 
-  // DrawIndexed only support until otherwise needed.
-  mtlpp::PrimitiveType primitiveType;
-  uint32_t indexCount;
-  mtlpp::IndexType indexType;
-  const mtlpp::Buffer& indexBuffer;
-
-  // Optional:
-  std::optional<mtlpp::CullMode> cullMode;
-  std::optional<mtlpp::DepthStencilState> depthStencilState;
+  // DrawIndexed options plus buffers.
+  mtlpp::PrimitiveType drawPrimitiveType;
+  uint32_t drawIndexCount;
+  mtlpp::IndexType drawIndexType;
+  const mtlpp::Buffer& drawIndexBuffer;
   std::optional<std::vector<mtlpp::Buffer*>> vertexBuffers;
   std::optional<std::vector<mtlpp::Buffer*>> fragmentBuffers;
+
+  // General draw config
+  std::optional<mtlpp::CullMode> cullMode;
+  std::optional<mtlpp::DepthStencilState> depthStencilState;
 };
 
 void
-Render(RenderCommandInitializer&& initializer)
+Render(RenderInitializer&& initializer)
 {
-  mtlpp::CommandBuffer commandBuffer = initializer.commandQueue.CommandBuffer();
+  auto& [commandQueue,
+         renderPipelineState,
+         renderPassDescriptor,
+         drawable,
+         drawPrimitiveType,
+         drawIndexCount,
+         drawIndexType,
+         drawIndexBuffer,
+         vertexBuffers,
+         fragmentBuffers,
+         cullMode,
+         depthStencilState] = initializer;
+
+  mtlpp::CommandBuffer commandBuffer = commandQueue.CommandBuffer();
 
   mtlpp::RenderCommandEncoder renderCommandEncoder =
-    commandBuffer.RenderCommandEncoder(initializer.renderPassDescriptor);
+    commandBuffer.RenderCommandEncoder(renderPassDescriptor);
 
-  if (initializer.cullMode) {
-    printf("initializer.cullMode\n");
-    renderCommandEncoder.SetCullMode(initializer.cullMode.value());
+  renderCommandEncoder.SetRenderPipelineState(renderPipelineState);
+
+  if (cullMode) {
+    renderCommandEncoder.SetCullMode(cullMode.value());
   }
 
-  if (initializer.depthStencilState) {
-    printf("initializer.depthStencilState\n");
-    renderCommandEncoder.SetDepthStencilState(
-      initializer.depthStencilState.value());
+  if (depthStencilState) {
+    renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
   }
 
-  if (initializer.vertexBuffers) {
-    auto& buffers = initializer.vertexBuffers.value();
+  if (vertexBuffers) {
+    auto& buffers = vertexBuffers.value();
     for (size_t i = 0; i < buffers.size(); i++) {
       auto& buffer = buffers[i];
-      printf("initializer.vertexBuffers %zu\n", i);
       ReleaseAssert(buffer, "VertexBuffer must exist.");
       renderCommandEncoder.SetVertexBuffer(*buffer, 0, i);
     }
   }
 
-  if (initializer.fragmentBuffers) {
-    auto& buffers = initializer.fragmentBuffers.value();
+  if (fragmentBuffers) {
+    auto& buffers = fragmentBuffers.value();
     for (size_t i = 0; i < buffers.size(); i++) {
       auto& buffer = buffers[i];
-      printf("initializer.fragmentBuffers %zu\n", i);
       ReleaseAssert(buffer, "VertexBuffer must exist.");
       renderCommandEncoder.SetFragmentBuffer(*buffer, 0, i);
     }
   }
 
-  renderCommandEncoder.DrawIndexed(initializer.primitiveType,
-                                   initializer.indexCount,
-                                   initializer.indexType,
-                                   initializer.indexBuffer,
+  renderCommandEncoder.DrawIndexed(drawPrimitiveType,
+                                   drawIndexCount,
+                                   drawIndexType,
+                                   drawIndexBuffer,
                                    // offset
                                    0);
 
