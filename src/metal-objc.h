@@ -1,8 +1,10 @@
 #pragma once
 #include "mtlpp/mtlpp.hpp"
-#include <exception>
-#include <span>
-#include <vector>
+#include <exception> // std::exception
+#include <span>      // std::span
+#include <sstream>   // std::ostringstream
+#include <vector>    // std::vector
+
 using namespace mtlpp;
 
 namespace viz {
@@ -11,22 +13,26 @@ namespace viz {
  * This class encapsulates the underlying NSError object. I wasn't satisfied
  * with the way mtlpp was handling this.
  */
-class Error : public std::exception
+class NicerNSError : public std::exception
 {
 public:
   // Make sure and move the error, or else it will ge re-initialized.
-  explicit Error(ns::Error&& error)
+  explicit NicerNSError(ns::Error&& error)
     : mError(error){};
   explicit operator bool() const;
-  void print();
+
+  const char* what() const noexcept;
 
   ns::Error mError;
+  // The message is lazily initialized, and is mutated during the const
+  // "what()" method, hence the mutable term.
+  mutable std::string mErrorMessage;
 };
 
-std::pair<mtlpp::Library, viz::Error>
+std::pair<mtlpp::Library, viz::NicerNSError>
 CreateLibraryFromMetalLib(Device device, const char* metallib);
 
-std::pair<mtlpp::Library, viz::Error>
+std::pair<mtlpp::Library, viz::NicerNSError>
 CreateLibraryFromSource(Device device,
                         const char* source,
                         const CompileOptions& options);

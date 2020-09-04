@@ -1,53 +1,60 @@
 #include <Foundation/NSError.h>
 #include <Metal/MTLDevice.h>
 #include <mach-o/dyld.h>   //_NSGetExecutablePath
+#include <sstream>         // std::ostringstream
+#include <string>          // std::string
 #include <sys/syslimits.h> // PATH_MAX
 // Make sure including metal.h is last, otherwise there is ambiguous
 // resolution of some internal types.
 #include "metal-objc.h"
 #include "termcolor.hpp"
 
-viz::Error::operator bool() const
+viz::NicerNSError::operator bool() const
 {
   return mError.GetPtr() != nil;
 }
 
-void
-viz::Error::print()
+const char*
+viz::NicerNSError::what() const noexcept
 {
-  auto error = (__bridge NSError*)mError.GetPtr();
-  if (error == nil) {
-    // There is no error.
-    return;
-  }
+  if (mErrorMessage.size() == 0) {
+    std::ostringstream stream;
+    auto error = (__bridge NSError*)mError.GetPtr();
+    if (error == nil) {
+      // There is no error.
+      return "No NSError is associated with this error.";
+    }
 
 #define HEADER(text)                                                           \
-  std::cout << termcolor::bold << termcolor::magenta << text                   \
-            << termcolor::reset << std::endl;
+  stream << termcolor::bold << termcolor::magenta << text << termcolor::reset  \
+         << std::endl;
 
-  HEADER("Error Code " << [error code]);
-  HEADER("Description:");
+    HEADER("Error Code " << [error code]);
+    HEADER("Description:");
 
-  std::cout << [[error localizedDescription] UTF8String] << std::endl;
+    stream << [[error localizedDescription] UTF8String] << std::endl;
 
-  if ([error localizedRecoveryOptions]) {
-    HEADER("Recovery Options:");
-    for (NSString* string in [error localizedRecoveryOptions]) {
-      std::cout << [string UTF8String] << std::endl;
+    if ([error localizedRecoveryOptions]) {
+      HEADER("Recovery Options:");
+      for (NSString* string in [error localizedRecoveryOptions]) {
+        stream << [string UTF8String] << std::endl;
+      }
     }
-  }
-  if ([error localizedRecoverySuggestion]) {
-    HEADER("Recovery Suggestions:");
-    std::cout << [[error localizedRecoverySuggestion] UTF8String] << std::endl;
-  }
-  if ([error localizedFailureReason]) {
-    HEADER("Failure Reason:");
-    std::cout << [[error localizedFailureReason] UTF8String] << std::endl;
-  }
+    if ([error localizedRecoverySuggestion]) {
+      HEADER("Recovery Suggestions:");
+      stream << [[error localizedRecoverySuggestion] UTF8String] << std::endl;
+    }
+    if ([error localizedFailureReason]) {
+      HEADER("Failure Reason:");
+      stream << [[error localizedFailureReason] UTF8String] << std::endl;
+    }
+    mErrorMessage = stream.str();
 #undef HEADER
+  }
+  return mErrorMessage.c_str();
 }
 
-std::pair<Library, viz::Error>
+std::pair<Library, viz::NicerNSError>
 viz::CreateLibraryFromSource(Device device,
                              const char* source,
                              const CompileOptions& options)
@@ -61,10 +68,10 @@ viz::CreateLibraryFromSource(Device device,
                    error:&error];
 
   return std::pair(ns::Handle{ (__bridge void*)library },
-                   viz::Error(ns::Handle{ (__bridge void*)error }));
+                   viz::NicerNSError(ns::Handle{ (__bridge void*)error }));
 };
 
-std::pair<mtlpp::Library, viz::Error>
+std::pair<mtlpp::Library, viz::NicerNSError>
 viz::CreateLibraryFromMetalLib(Device device, const char* metallib)
 {
   // Error
@@ -75,7 +82,7 @@ viz::CreateLibraryFromMetalLib(Device device, const char* metallib)
                  error:&error];
 
   return std::pair(ns::Handle{ (__bridge void*)library },
-                   viz::Error(ns::Handle{ (__bridge void*)error }));
+                   viz::NicerNSError(ns::Handle{ (__bridge void*)error }));
 }
 
 /**
@@ -105,7 +112,7 @@ viz::CreateLibraryForExample(Device device)
     newLibraryWithFile:[NSString stringWithUTF8String:path.c_str()]
                  error:&nsError];
 
-  auto error = viz::Error(ns::Handle{ (__bridge void*)nsError });
+  auto error = viz::NicerNSError(ns::Handle{ (__bridge void*)nsError });
   if (error) {
     throw error;
   }

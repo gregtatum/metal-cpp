@@ -7,7 +7,7 @@
  * This example shows creating a basic rendering pipeline.
  */
 int
-main()
+run()
 {
   const char source[] =
 #include "./render-pipeline.metal"
@@ -24,7 +24,7 @@ main()
     viz::CreateLibraryFromSource(device, source, mtlpp::CompileOptions());
 
   if (libraryError) {
-    libraryError.print();
+    std::cout << libraryError.what();
     return 1;
   }
 
@@ -64,4 +64,10 @@ main()
   };
 
   viz::InitApp(device, &tickFn);
+}
+
+int
+main()
+{
+  return viz::display_exceptions(run);
 }
