@@ -508,4 +508,15 @@ public:
   // GLKVector3 projectionVector);
 };
 
+class Vector2 : public GLKVector2
+{
+public:
+  Vector2(GLKVector2 v)
+    : GLKVector2(v){};
+
+  Vector2(float x, float y) { *this = GLKVector2Make(x, y); };
+
+  float& operator[](int index) { return v[index]; };
+}
+
 } // namespace viz
