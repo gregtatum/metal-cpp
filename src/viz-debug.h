@@ -4,6 +4,60 @@
 
 namespace viz {
 
+namespace traits {
+
+// clang-format off
+struct empty {};
+struct pod {};
+struct tuple2 {};
+struct tuple3 {};
+struct list {};
+// clang-format on
+
+template<typename Child>
+struct tag
+{};
+
+template<>
+struct tag<uint32_t>
+{
+  typedef pod type;
+  typedef empty child;
+};
+template<>
+struct tag<float>
+{
+  typedef pod type;
+  typedef empty child;
+};
+template<>
+struct tag<Vector3>
+{
+  typedef tuple3 type;
+  typedef empty child;
+};
+template<typename Child>
+struct tag<std::array<Child, 3>>
+{
+  typedef tuple3 type;
+  typedef Child child;
+};
+template<>
+struct tag<Vector2>
+{
+  typedef tuple2 type;
+  typedef empty child;
+};
+template<typename Child>
+struct tag<std::vector<Child>>
+{
+  typedef list type;
+  typedef Child child;
+};
+
+} // traits
+
+namespace dispatch {
 static void
 DebugIndent(size_t tabDepth)
 {
@@ -12,26 +66,26 @@ DebugIndent(size_t tabDepth)
   }
 }
 
-template<typename T>
+template<typename Tag, typename T>
 struct debug
 {
-  static void print(T const& v) { std::cout << v; }
+  static void apply(T const& v) { std::cout << v; }
 };
 
-template<>
-struct debug<Vector2>
+template<typename T>
+struct debug<traits::tuple2, T>
 {
-  static void print(Vector2 const& v, size_t tabDepth = 0)
+  static void apply(T const& v, size_t tabDepth = 0)
   {
     DebugIndent(tabDepth);
     std::cout << "[" << v[0] << ", " << v[1] << "]";
   }
 };
 
-template<>
-struct debug<Vector3>
+template<typename T>
+struct debug<traits::tuple3, T>
 {
-  static void print(Vector3 const& v, size_t tabDepth = 0)
+  static void apply(T const& v, size_t tabDepth = 0)
   {
     DebugIndent(tabDepth);
     std::cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
@@ -39,16 +93,19 @@ struct debug<Vector3>
 };
 
 template<typename T>
-struct debug<std::vector<T>>
+struct debug<traits::list, T>
 {
-  static void print(std::vector<T> const& v, size_t tabDepth = 0)
+  using Child = typename traits::tag<T>::child;
+  using ChildType = typename traits::tag<Child>::type;
+
+  static void apply(T const& v, size_t tabDepth = 0)
   {
     if (v.size() == 0) {
-      std::cout << "std::vector{ empty }";
+      std::cout << "list{ empty }";
       return;
     }
 
-    std::cout << "std::vector{\n";
+    std::cout << "list{\n";
     for (size_t i = 0; i < v.size(); i++) {
       if (i != 0) {
         std::cout << ",\n";
@@ -59,30 +116,21 @@ struct debug<std::vector<T>>
         std::cout << "(..." << v.size() - i << " more...)\n";
         break;
       }
-      debug<T>::print(v[i], tabDepth + 1);
+
+      debug<ChildType, Child>::apply(v[i], tabDepth + 1);
     }
 
     DebugIndent(tabDepth);
     std::cout << "}";
   }
 };
+} // dispatch
 
-// namespace traits {
-// template<typename P>
-// struct data_type
-// {};
-
-// struct pod
-// {};
-
-// // clang-format off
-// template <>
-// struct data_type<uint32_t> { typedef pod type; };
-// template <>
-// struct data_type<float> { typedef pod type; };
-
-// // clang-format on
-
-// } // tags
+template<typename T>
+void
+debug(T const& v, size_t tabDepth = 0)
+{
+  return dispatch::debug<typename traits::tag<T>::type, T>::apply(v, tabDepth);
+}
 
 } // viz

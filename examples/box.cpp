@@ -30,7 +30,7 @@ CreateBuffers(Device& device)
 {
   auto mesh = viz::generateBox({ 1, 1, 1 }, { 1, 1, 1 });
   auto cpuWrite = mtlpp::ResourceOptions::CpuCacheModeWriteCombined;
-  debug<Mesh>::print(mesh);
+  debug(mesh);
 
   return Buffers{
     .positions = CreateBufferFromList(device, cpuWrite, mesh.positions),
