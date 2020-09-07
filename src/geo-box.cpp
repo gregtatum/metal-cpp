@@ -1,5 +1,6 @@
 // #include "geo-box.h"
 #include "geo-box.h"
+#include "viz-debug.h"
 #include "viz-math.h"
 #include <vector>
 
@@ -96,8 +97,8 @@ generateUvs(Positions2D& positions, PanelConfig const& config)
 {
   UVs uvs{};
   for (auto& position : positions) {
-    auto u = position[0] / config.wx + 0.5;
-    auto v = position[1] / config.wy + 0.5;
+    float u = position[0] / config.wx + 0.5;
+    float v = position[1] / config.wy + 0.5;
     uvs.push_back({ u, v });
   }
   return uvs;
@@ -124,8 +125,9 @@ Positions
 map2DTo3D(Panel const& panel, Fn fn)
 {
   Positions positions3D;
-  for (auto& p2D : panel.positions) {
-    positions3D.push_back(fn(p2D));
+  for (auto p2D : panel.positions2D) {
+    Vector3 v = fn(p2D);
+    positions3D.push_back(v);
   }
   return positions3D;
 }
@@ -142,7 +144,7 @@ makeNormals(viz::Vector3&& normal, size_t count)
   return normals;
 }
 
-std::array<Panel, 6>
+std::vector<Panel>
 generateBoxPanels(Mesh& mesh, viz::Vector3& size, viz::Vector3& segments)
 {
 
@@ -166,12 +168,12 @@ generateBoxPanels(Mesh& mesh, viz::Vector3& size, viz::Vector3& segments)
   auto ym = Panel{ yp };
 
   // clang-format off
-	zp.positions = map2DTo3D(zp, [&](viz::Vector2 p){ return viz::Vector3 {       p[0],       p[1],  size[2]/2 }; });
-	zm.positions = map2DTo3D(zm, [&](viz::Vector2 p){ return viz::Vector3 {       p[0],      -p[1], -size[2]/2 }; });
-	xp.positions = map2DTo3D(xp, [&](viz::Vector2 p){ return viz::Vector3 {  size[0]/2,      -p[1],       p[0] }; });
-	xm.positions = map2DTo3D(xm, [&](viz::Vector2 p){ return viz::Vector3 { -size[0]/2,       p[1],       p[0] }; });
-	yp.positions = map2DTo3D(yp, [&](viz::Vector2 p){ return viz::Vector3 {       p[0],  size[1]/2,      -p[1] }; });
-	ym.positions = map2DTo3D(ym, [&](viz::Vector2 p){ return viz::Vector3 {       p[0], -size[1]/2,       p[1] }; });
+	zp.positions = map2DTo3D(zp, [&](Vector2& p){ return viz::Vector3 {       p[0],       p[1],  size[2]/2 }; });
+	zm.positions = map2DTo3D(zm, [&](Vector2& p){ return viz::Vector3 {       p[0],      -p[1], -size[2]/2 }; });
+	xp.positions = map2DTo3D(xp, [&](Vector2& p){ return viz::Vector3 {  size[0]/2,      -p[1],       p[0] }; });
+	xm.positions = map2DTo3D(xm, [&](Vector2& p){ return viz::Vector3 { -size[0]/2,       p[1],       p[0] }; });
+	yp.positions = map2DTo3D(yp, [&](Vector2& p){ return viz::Vector3 {       p[0],  size[1]/2,      -p[1] }; });
+	ym.positions = map2DTo3D(ym, [&](Vector2& p){ return viz::Vector3 {       p[0], -size[1]/2,       p[1] }; });
   // clang-format on
 
   zp.normals = makeNormals({ 0, 0, 1 }, zp.positions.size());
@@ -185,7 +187,7 @@ generateBoxPanels(Mesh& mesh, viz::Vector3& size, viz::Vector3& segments)
 }
 
 void
-offsetCellIndices(std::array<Panel, 6>& panels)
+offsetCellIndices(std::vector<Panel>& panels)
 {
   // e.g.
   // from: [[[0,1,2],[2,3,0]],[[0,1,2],[2,3,0]]]
@@ -204,7 +206,7 @@ offsetCellIndices(std::array<Panel, 6>& panels)
 }
 
 Mesh
-generateBox(viz::Vector3& size, viz::Vector3& segments)
+generateBox(viz::Vector3 size, viz::Vector3 segments = Vector3{ 1, 1, 1 })
 {
   Mesh mesh{};
 
@@ -215,16 +217,16 @@ generateBox(viz::Vector3& size, viz::Vector3& segments)
 
   // Combine the panels together.
   for (auto const& panel : panels) {
-    for (auto const& position : mesh.positions) {
+    for (auto const& position : panel.positions) {
       mesh.positions.push_back(position);
     }
-    for (auto const& uv : mesh.uvs) {
+    for (auto const& uv : panel.uvs) {
       mesh.uvs.push_back(uv);
     }
-    for (auto const& normal : mesh.normals) {
+    for (auto const& normal : panel.normals) {
       mesh.normals.push_back(normal);
     }
-    for (auto const& cell : mesh.cells) {
+    for (auto const& cell : panel.cells) {
       mesh.cells.push_back(cell);
     }
   }

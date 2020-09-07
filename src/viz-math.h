@@ -93,6 +93,11 @@ public:
     return GLKMatrix4MakeTranslation(tx, ty, tz);
   };
 
+  static Matrix4 MakeScale(float size)
+  {
+    return GLKMatrix4MakeScale(size, size, size);
+  }
+
   static Matrix4 MakeScale(float sx, float sy, float sz)
   {
     return GLKMatrix4MakeScale(sx, sy, sz);
@@ -413,7 +418,7 @@ public:
 
   Vector3(float x, float y, float z) { *this = GLKVector3Make(x, y, z); };
 
-  float& operator[](int index) { return v[index]; };
+  const float& operator[](int index) const { return v[index]; };
 
   // TODO
 
@@ -516,7 +521,7 @@ public:
 
   Vector2(float x, float y) { *this = GLKVector2Make(x, y); };
 
-  float& operator[](int index) { return v[index]; };
-}
+  const float& operator[](int index) const { return v[index]; };
+};
 
 } // namespace viz
