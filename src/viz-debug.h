@@ -54,6 +54,12 @@ struct tag<std::vector<Child>>
   typedef list type;
   typedef Child child;
 };
+template<typename Child>
+struct tag<std::span<Child>>
+{
+  typedef list type;
+  typedef Child child;
+};
 
 } // traits
 
@@ -69,7 +75,7 @@ DebugIndent(size_t tabDepth)
 template<typename Tag, typename T>
 struct debug
 {
-  static void apply(T const& v) { std::cout << v; }
+  static void apply(T const& v, size_t tabDepth = 0) { std::cout << v; }
 };
 
 template<typename T>
@@ -101,11 +107,11 @@ struct debug<traits::list, T>
   static void apply(T const& v, size_t tabDepth = 0)
   {
     if (v.size() == 0) {
-      std::cout << "list{ empty }";
+      std::cout << "{ empty }";
       return;
     }
 
-    std::cout << "list{\n";
+    std::cout << "{\n";
     for (size_t i = 0; i < v.size(); i++) {
       if (i != 0) {
         std::cout << ",\n";
@@ -119,6 +125,7 @@ struct debug<traits::list, T>
 
       debug<ChildType, Child>::apply(v[i], tabDepth + 1);
     }
+    std::cout << "\n";
 
     DebugIndent(tabDepth);
     std::cout << "}";
@@ -128,7 +135,18 @@ struct debug<traits::list, T>
 
 template<typename T>
 void
-debug(T const& v, size_t tabDepth = 0)
+Debug(T const& v, size_t tabDepth = 0)
+{
+  dispatch::debug<typename traits::tag<T>::type, T>::apply(v, tabDepth);
+  std::cout << "\n";
+}
+
+/**
+ * This variant ensures a final newline isn't added.
+ */
+template<typename T>
+void
+DebugWithoutNewline(T const& v, size_t tabDepth = 0)
 {
   return dispatch::debug<typename traits::tag<T>::type, T>::apply(v, tabDepth);
 }

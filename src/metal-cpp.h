@@ -148,5 +148,4 @@ Render(RenderInitializer&& initializer)
   commandBuffer.Commit();
   commandBuffer.WaitUntilCompleted();
 }
-
 } // viz

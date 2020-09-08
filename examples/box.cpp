@@ -18,10 +18,10 @@ using namespace viz;
 
 struct Buffers
 {
-  mtlpp::Buffer positions;
-  mtlpp::Buffer cells;
-  mtlpp::Buffer normals;
-  mtlpp::Buffer uniforms;
+  BufferViewList<Vector3> positions;
+  BufferViewList<std::array<uint32_t, 3>> cells;
+  BufferViewList<Vector3> normals;
+  BufferViewStruct<Uniforms> uniforms;
   uint32_t cellsSize;
 };
 
@@ -30,13 +30,14 @@ CreateBuffers(Device& device)
 {
   auto mesh = viz::generateBox({ 1, 1, 1 }, { 1, 1, 1 });
   auto cpuWrite = mtlpp::ResourceOptions::CpuCacheModeWriteCombined;
-  debug(mesh);
+  Debug(mesh);
 
   return Buffers{
-    .positions = CreateBufferFromList(device, cpuWrite, mesh.positions),
-    .cells = CreateBufferFromList(device, cpuWrite, mesh.cells),
-    .normals = CreateBufferFromList(device, cpuWrite, mesh.normals),
-    .uniforms = CreateBufferFromStructType<Uniforms>(device, cpuWrite),
+    .positions = BufferViewList<Vector3>(device, cpuWrite, mesh.positions),
+    .cells =
+      BufferViewList<std::array<uint32_t, 3>>(device, cpuWrite, mesh.cells),
+    .normals = BufferViewList<Vector3>(device, cpuWrite, mesh.normals),
+    .uniforms = BufferViewStruct<Uniforms>(device, cpuWrite),
     .cellsSize = static_cast<uint32_t>(mesh.cells.size() * 3),
   };
 }
@@ -49,7 +50,7 @@ run()
   auto library = CreateLibraryForExample(device);
   auto buffers = CreateBuffers(device);
 
-  Uniforms* uniforms = InitializeBuffer(buffers.uniforms, Uniforms{});
+  Uniforms* uniforms = buffers.uniforms.data;
 
   // This creates a render pipeline configuration that can be used to create a
   // pipeline state object. Right now, we only care about setting up a vertex
@@ -79,6 +80,8 @@ run()
     // clang-format on
   );
 
+  Debug(buffers.positions);
+
   TickFn tickFn = [&](Tick& tick) -> void {
     auto projection = Matrix4::MakePerspective(
       M_PI * 0.3, tick.width / tick.height, 0.05, 100.0);
@@ -99,13 +102,13 @@ run()
       .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
       .drawIndexCount = buffers.cellsSize,
       .drawIndexType = mtlpp::IndexType::UInt32,
-      .drawIndexBuffer = buffers.cells,
+      .drawIndexBuffer = buffers.cells.buffer,
       .vertexBuffers = std::vector({
-        &buffers.positions,
-        &buffers.normals,
-        &buffers.uniforms,
+        &buffers.positions.buffer,
+        &buffers.normals.buffer,
+        &buffers.uniforms.buffer,
       }),
-      .fragmentBuffers = std::vector({ &buffers.uniforms }),
+      .fragmentBuffers = std::vector({ &buffers.uniforms.buffer }),
 
       // General draw config
       .cullMode = mtlpp::CullMode::None,

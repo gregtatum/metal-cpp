@@ -42,22 +42,22 @@ struct debug<traits::mesh, Mesh>
 
     DebugIndent(tabDepth + 1);
     std::cout << "positions: ";
-    ::viz::debug<Positions>(mesh.positions, tabDepth + 1);
+    ::viz::DebugWithoutNewline<Positions>(mesh.positions, tabDepth + 1);
 
     std::cout << ",\n";
     DebugIndent(tabDepth + 1);
     std::cout << "uvs: ";
-    ::viz::debug<UVs>(mesh.uvs, tabDepth + 1);
+    ::viz::DebugWithoutNewline<UVs>(mesh.uvs, tabDepth + 1);
 
     std::cout << ",\n";
     DebugIndent(tabDepth + 1);
     std::cout << "normals: ";
-    ::viz::debug<Normals>(mesh.normals, tabDepth + 1);
+    ::viz::DebugWithoutNewline<Normals>(mesh.normals, tabDepth + 1);
 
     std::cout << ",\n";
     DebugIndent(tabDepth + 1);
     std::cout << "cells: ";
-    ::viz::debug<Cells>(mesh.cells, tabDepth + 1);
+    ::viz::DebugWithoutNewline<Cells>(mesh.cells, tabDepth + 1);
 
     std::cout << ",\n}";
   }
