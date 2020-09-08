@@ -1,7 +1,6 @@
 #include "cocoa-app.h"
 #include "metal-objc.h"
 #include "mtlpp/mtlpp.hpp"
-#include "termcolor.hpp"
 
 /**
  * This example shows creating a basic rendering pipeline.

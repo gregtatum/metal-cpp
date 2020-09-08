@@ -7,7 +7,6 @@
 // Make sure including metal.h is last, otherwise there is ambiguous
 // resolution of some internal types.
 #include "metal-objc.h"
-#include "termcolor.hpp"
 
 viz::NicerNSError::operator bool() const
 {
@@ -25,31 +24,26 @@ viz::NicerNSError::what() const noexcept
       return "No NSError is associated with this error.";
     }
 
-#define HEADER(text)                                                           \
-  stream << termcolor::bold << termcolor::magenta << text << termcolor::reset  \
-         << std::endl;
-
-    HEADER("Error Code " << [error code]);
-    HEADER("Description:");
+    stream << "Error Code " << [error code] << std::endl;
+    stream << "Description:" << std::endl;
 
     stream << [[error localizedDescription] UTF8String] << std::endl;
 
     if ([error localizedRecoveryOptions]) {
-      HEADER("Recovery Options:");
+      stream << "Recovery Options:" << std::endl;
       for (NSString* string in [error localizedRecoveryOptions]) {
         stream << [string UTF8String] << std::endl;
       }
     }
     if ([error localizedRecoverySuggestion]) {
-      HEADER("Recovery Suggestions:");
+      stream << "Recovery Suggestions:" << std::endl;
       stream << [[error localizedRecoverySuggestion] UTF8String] << std::endl;
     }
     if ([error localizedFailureReason]) {
-      HEADER("Failure Reason:");
+      stream << "Failure Reason:" << std::endl;
       stream << [[error localizedFailureReason] UTF8String] << std::endl;
     }
     mErrorMessage = stream.str();
-#undef HEADER
   }
   return mErrorMessage.c_str();
 }

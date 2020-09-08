@@ -68,8 +68,8 @@ bin/%.metallib: build/%.air
 
 # Install the dependency of mtlpp.
 includes/mtlpp: includes
-	git clone git@github.com:naleksiev/mtlpp.git includes/mtlpp
-	cd includes/mtlpp && \
+	git clone git@github.com:naleksiev/mtlpp.git includes/mtlpp && \
+		cd includes/mtlpp && \
 		git checkout -b checkout-v1 71a38f4e8bcf7a06bdb234cbe13c6299a9bb127e
 
 # Ensure the bin dir is created if needed.
@@ -106,3 +106,6 @@ ifndef EXAMPLE
 else
 	node ./scripts/watch ${EXAMPLE}
 endif
+
+.PHONY: init
+init: includes/mtlpp
