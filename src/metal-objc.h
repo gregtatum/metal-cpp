@@ -145,22 +145,11 @@ struct debug<traits::bufferviewlist, BufferViewList<T>>
   static void apply(BufferViewList<T> const& bufferViewList,
                     size_t tabDepth = 0)
   {
-    DebugIndent(tabDepth);
-    std::cout << "BufferViewList {\n";
-
-    DebugIndent(tabDepth + 1);
-    std::cout << "resourceOptions: ";
-    ::viz::DebugWithoutNewline<mtlpp::ResourceOptions>(
-      bufferViewList.resourceOptions, tabDepth + 1);
-    std::cout << ",\n";
-
-    DebugIndent(tabDepth + 1);
-    std::cout << "data: ";
-    ::viz::DebugWithoutNewline<std::span<T>>(bufferViewList.data, tabDepth + 1);
-    std::cout << ",\n";
-
-    DebugIndent(tabDepth);
-    std::cout << "}";
+    VIZ_DEBUG_OBJ_HEADER(BufferViewList, bufferViewList, tabDepth);
+    VIZ_DEBUG_OBJ_PROP(
+      bufferViewList, tabDepth, resourceOptions, mtlpp::ResourceOptions);
+    VIZ_DEBUG_OBJ_PROP(bufferViewList, tabDepth, data, std::span<T>);
+    VIZ_DEBUG_OBJ_FOOTER(tabDepth);
   }
 };
 

@@ -1,3 +1,4 @@
+#include "macros.h"
 #include "viz-debug.h"
 #include "viz-math.h"
 
@@ -19,49 +20,13 @@ struct Mesh
 Mesh
 generateBox(viz::Vector3 size, viz::Vector3 segments);
 
-namespace traits {
-struct mesh
-{};
-template<>
-struct tag<Mesh>
-{
-  typedef mesh type;
-  typedef empty child;
-};
+VIZ_DEBUG_OBJ(mesh, Mesh, {
+  VIZ_DEBUG_OBJ_HEADER(Mesh, mesh, tabDepth);
+  VIZ_DEBUG_OBJ_PROP(mesh, tabDepth, positions, Positions);
+  VIZ_DEBUG_OBJ_PROP(mesh, tabDepth, uvs, UVs);
+  VIZ_DEBUG_OBJ_PROP(mesh, tabDepth, normals, Normals);
+  VIZ_DEBUG_OBJ_PROP(mesh, tabDepth, cells, Cells);
+  VIZ_DEBUG_OBJ_FOOTER(tabDepth);
+});
 
-}
-
-namespace dispatch {
-template<>
-struct debug<traits::mesh, Mesh>
-{
-  static void apply(Mesh const& mesh, size_t tabDepth = 0)
-  {
-    DebugIndent(tabDepth);
-    std::cout << "Mesh {\n";
-
-    DebugIndent(tabDepth + 1);
-    std::cout << "positions: ";
-    ::viz::DebugWithoutNewline<Positions>(mesh.positions, tabDepth + 1);
-
-    std::cout << ",\n";
-    DebugIndent(tabDepth + 1);
-    std::cout << "uvs: ";
-    ::viz::DebugWithoutNewline<UVs>(mesh.uvs, tabDepth + 1);
-
-    std::cout << ",\n";
-    DebugIndent(tabDepth + 1);
-    std::cout << "normals: ";
-    ::viz::DebugWithoutNewline<Normals>(mesh.normals, tabDepth + 1);
-
-    std::cout << ",\n";
-    DebugIndent(tabDepth + 1);
-    std::cout << "cells: ";
-    ::viz::DebugWithoutNewline<Cells>(mesh.cells, tabDepth + 1);
-
-    std::cout << ",\n}";
-  }
-};
-
-} // namespace dispatch
 } // namespace viz

@@ -8,6 +8,8 @@
 
 // This is the main dependency.
 #include "mtlpp/mtlpp.hpp"
+// Macros can be used everywhere.
+#include "macros.h"
 // Assertions are general-purpose.
 #include "viz-assert.h"
 // Includes the Cocoa bindings to start the app.
