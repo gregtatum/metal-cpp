@@ -4,6 +4,8 @@
 struct Uniforms
 {
   ModelMatrices matrices;
+  simd::float3 position;
+  float seconds;
 };
 
 #ifdef __METAL_VERSION__

@@ -13,6 +13,17 @@ const example = getExample();
 let exampleSubProcess;
 let isClosingSubProcess = false;
 
+const metalValidation = {
+  // Enables all shader validation tests.
+  MTL_SHADER_VALIDATION: "1",
+  // Validates accesses to device and constant memory.
+  MTL_SHADER_VALIDATION_GLOBAL_MEMORY: "1",
+  // Validates accesses to threadgroup memory.
+  MTL_SHADER_VALIDATION_THREADGROUP_MEMORY: "1",
+  // Validates that texture references are not nil.
+  MTL_SHADER_VALIDATION_TEXTURE_USAGE: "1",
+};
+
 buildAndRun();
 watchFiles();
 
@@ -42,7 +53,6 @@ function build() {
 function closeSubprocess() {
   isClosingSubProcess = true;
   const success = exampleSubProcess.kill();
-  isClosingSubProcess = false;
   if (!success) {
     console.error("Unable to close the example " + example);
     process.exit(1);
@@ -61,11 +71,13 @@ function runExample() {
     cwd: rootPath,
     detached: true,
     stdio: "inherit",
+    env: metalValidation,
   });
 
   exampleSubProcess.on("close", (code, signal) => {
-    if (!isClosingSubProcess) {
-      console.log(code, signal);
+    if (isClosingSubProcess) {
+      isClosingSubProcess = false;
+    } else {
       console.log("Example closed, stopped watching for changes.");
       process.exit(0);
     }
@@ -100,11 +112,7 @@ function handleFileChange(...args) {
     const [fileName, prevStat, currState] = args;
     console.log("🙈 File change detected", fileName);
     if (exampleSubProcess) {
-      const success = exampleSubProcess.kill();
-      if (!success) {
-        console.error("Unable to close the example " + example);
-        process.exit(1);
-      }
+      closeSubprocess();
       exampleSubProcess = null;
     }
     buildAndRun();
@@ -117,7 +125,8 @@ function watchFiles() {
     path.join(__dirname, "../examples"),
   ];
   for (const path of paths) {
-    const options = {};
+    // Interval is in seconds.
+    const options = { interval: 0.5 };
     watch.watchTree(path, options, handleFileChange);
   }
   console.log("👀 Watching the tree");

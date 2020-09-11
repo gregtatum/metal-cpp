@@ -21,23 +21,30 @@ struct Buffers
   BufferViewList<Vector3> positions;
   BufferViewList<std::array<uint32_t, 3>> cells;
   BufferViewList<Vector3> normals;
-  BufferViewStruct<Uniforms> uniforms;
+  std::vector<BufferViewStruct<Uniforms>> uniformsList;
   uint32_t cellsSize;
 };
+
+size_t COUNT_SIDE = 50;
+size_t COUNT = COUNT_SIDE * COUNT_SIDE;
 
 Buffers
 CreateBuffers(Device& device)
 {
-  auto mesh = viz::generateBox({ 1, 1, 1 }, { 1, 1, 1 });
+  auto mesh = viz::generateBox({ 1.0, 10.0, 1.0 }, { 1, 1, 1 });
   auto cpuWrite = mtlpp::ResourceOptions::CpuCacheModeWriteCombined;
-  Debug(mesh);
+
+  std::vector<BufferViewStruct<Uniforms>> uniformsList{};
+  for (size_t i = 0; i < COUNT; i++) {
+    uniformsList.push_back(BufferViewStruct<Uniforms>(device, cpuWrite));
+  }
 
   return Buffers{
     .positions = BufferViewList<Vector3>(device, cpuWrite, mesh.positions),
     .cells =
       BufferViewList<std::array<uint32_t, 3>>(device, cpuWrite, mesh.cells),
     .normals = BufferViewList<Vector3>(device, cpuWrite, mesh.normals),
-    .uniforms = BufferViewStruct<Uniforms>(device, cpuWrite),
+    .uniformsList = uniformsList,
     .cellsSize = static_cast<uint32_t>(mesh.cells.size() * 3),
   };
 }
@@ -49,8 +56,6 @@ run()
   auto commandQueue = device.NewCommandQueue();
   auto library = CreateLibraryForExample(device);
   auto buffers = CreateBuffers(device);
-
-  Uniforms* uniforms = buffers.uniforms.data;
 
   // This creates a render pipeline configuration that can be used to create a
   // pipeline state object. Right now, we only care about setting up a vertex
@@ -71,49 +76,63 @@ run()
     .depthWriteEnabled = true,
   });
 
-  auto cameraHeight = 0;
+  auto cameraHeight = 1.5;
   auto view = Matrix4::MakeLookAt(
     // clang-format off
         0, cameraHeight, -3, // eye
-        0, cameraHeight, 0, // center
+        0, 0, -1.0, // center
         0, 1, 0 // up
     // clang-format on
   );
 
-  Debug(buffers.positions);
-
   TickFn tickFn = [&](Tick& tick) -> void {
+    AutoDraw draw{ commandQueue, pipeline, tick };
+
+    draw.Clear(0.0, 0.05, 0.1);
+
     auto projection = Matrix4::MakePerspective(
       M_PI * 0.3, tick.width / tick.height, 0.05, 100.0);
 
-    auto model = Matrix4::MakeXRotation(tick.seconds * 0.2) *
-                 Matrix4::MakeYRotation(tick.seconds) * Matrix4::MakeScale(1.0);
+    float count = static_cast<float>(buffers.uniformsList.size());
+    float extent = 2.0f;
 
-    uniforms->matrices = GetModelMatrices(model, view, projection);
+    for (size_t i = 0; i < COUNT_SIDE; i++) {
+      float ui = static_cast<float>(i) / static_cast<float>(COUNT_SIDE);
+      for (size_t j = 0; j < COUNT_SIDE; j++) {
+        float uj = static_cast<float>(j) / static_cast<float>(COUNT_SIDE);
 
-    Render({
-      // Required pieces.
-      .commandQueue = commandQueue,
-      .renderPipelineState = pipeline,
-      .renderPassDescriptor = tick.renderPassDescriptor,
-      .drawable = tick.drawable,
+        auto& uniforms = buffers.uniformsList[i + j * COUNT_SIDE];
 
-      // DrawIndexed options plus buffers.
-      .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-      .drawIndexCount = buffers.cellsSize,
-      .drawIndexType = mtlpp::IndexType::UInt32,
-      .drawIndexBuffer = buffers.cells.buffer,
-      .vertexBuffers = std::vector({
-        &buffers.positions.buffer,
-        &buffers.normals.buffer,
-        &buffers.uniforms.buffer,
-      }),
-      .fragmentBuffers = std::vector({ &buffers.uniforms.buffer }),
+        float x = std::lerp(-extent, extent, ui);
+        float y = 0.0f;
+        float z = std::lerp(-extent, extent, uj);
 
-      // General draw config
-      .cullMode = mtlpp::CullMode::None,
-      .depthStencilState = depthState,
-    });
+        auto model = Matrix4::MakeTranslation(x, y, z) *
+                     Matrix4::MakeScale(1.0f / COUNT_SIDE);
+
+        uniforms.data->matrices = GetModelMatrices(model, view, projection);
+        uniforms.data->position = { x, y, z };
+        uniforms.data->seconds = tick.seconds;
+
+        draw.Render({
+          // DrawIndexed options plus buffers.
+          .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
+          .drawIndexCount = buffers.cellsSize,
+          .drawIndexType = mtlpp::IndexType::UInt32,
+          .drawIndexBuffer = buffers.cells.buffer,
+          .vertexBuffers = std::vector({
+            &buffers.positions.buffer,
+            &buffers.normals.buffer,
+            &uniforms.buffer,
+          }),
+          .fragmentBuffers = std::vector({ &uniforms.buffer }),
+
+          // General draw config
+          .cullMode = mtlpp::CullMode::None,
+          .depthStencilState = depthState,
+        });
+      }
+    }
   };
 
   InitApp(device, &tickFn);

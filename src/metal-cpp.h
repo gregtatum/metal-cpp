@@ -67,85 +67,175 @@ InitializeDepthStencil(DepthStencilInitializer&& initializer)
 
 struct RenderInitializer
 {
-  // Required dependencies.
-  mtlpp::CommandQueue& commandQueue;
-  mtlpp::RenderPipelineState& renderPipelineState;
-  mtlpp::RenderPassDescriptor& renderPassDescriptor;
-  mtlpp::Drawable& drawable;
-
   // DrawIndexed options plus buffers.
   mtlpp::PrimitiveType drawPrimitiveType;
   uint32_t drawIndexCount;
   mtlpp::IndexType drawIndexType;
   const mtlpp::Buffer& drawIndexBuffer;
-  std::optional<std::vector<mtlpp::Buffer*>> vertexBuffers;
-  std::optional<std::vector<mtlpp::Buffer*>> fragmentBuffers;
+  std::vector<mtlpp::Buffer*> vertexBuffers;
+  std::vector<mtlpp::Buffer*> fragmentBuffers;
 
   // General draw config
   std::optional<mtlpp::CullMode> cullMode;
   std::optional<mtlpp::DepthStencilState> depthStencilState;
 };
 
-void
-Render(RenderInitializer&& initializer)
+// struct RenderInstancedInitializer
+// {
+//   // Required dependencies.
+//   mtlpp::CommandQueue& commandQueue;
+//   mtlpp::RenderPipelineState& renderPipelineState;
+//   mtlpp::RenderPassDescriptor& renderPassDescriptor;
+
+//   // DrawIndexed options plus buffers.
+//   mtlpp::PrimitiveType drawPrimitiveType;
+//   uint32_t drawIndexCount;
+//   mtlpp::IndexType drawIndexType;
+//   const mtlpp::Buffer& drawIndexBuffer;
+//   std::optional<std::vector<mtlpp::Buffer*>> vertexBuffers;
+//   std::optional<std::vector<mtlpp::Buffer*>> fragmentBuffers;
+
+//   // General draw config
+//   std::optional<mtlpp::CullMode> cullMode;
+//   std::optional<mtlpp::DepthStencilState> depthStencilState;
+// };
+
+// void
+// RenderInstanced(RenderInstancedInitializer&& initializer)
+// {
+
+//   renderCommandEncoder.DrawIndexed(
+//     PrimitiveType primitiveType,
+//     uint32_t indexCount,
+//     IndexType indexType,
+//     const Buffer& indexBuffer,
+//     uint32_t indexBufferOffset,
+//     uint32_t instanceCount
+//   )
+// }
+
+/**
+ * Automatically handles a draw pass based based on when the AutoDraw object is
+ * in scope.
+ */
+class AutoDraw
 {
-  auto& [commandQueue,
-         renderPipelineState,
-         renderPassDescriptor,
-         drawable,
-         drawPrimitiveType,
-         drawIndexCount,
-         drawIndexType,
-         drawIndexBuffer,
-         vertexBuffers,
-         fragmentBuffers,
-         cullMode,
-         depthStencilState] = initializer;
-
-  mtlpp::CommandBuffer commandBuffer = commandQueue.CommandBuffer();
-
-  mtlpp::RenderCommandEncoder renderCommandEncoder =
-    commandBuffer.RenderCommandEncoder(renderPassDescriptor);
-
-  renderCommandEncoder.SetRenderPipelineState(renderPipelineState);
-
-  if (cullMode) {
-    renderCommandEncoder.SetCullMode(cullMode.value());
+public:
+  AutoDraw(mtlpp::CommandQueue& aCommandQueue,
+           mtlpp::RenderPipelineState& aRenderPipelineState,
+           Tick& aTick)
+    : mCommandQueue(aCommandQueue)
+    , mRenderPipelineState(aRenderPipelineState)
+    , mTick(aTick)
+  {
+    mCommandBuffer = mCommandQueue.CommandBuffer();
   }
 
-  if (depthStencilState) {
-    renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
+  ~AutoDraw()
+  {
+    mCommandBuffer.Present(mTick.drawable);
+    mCommandBuffer.Commit();
+    mCommandBuffer.WaitUntilCompleted();
   }
 
-  if (vertexBuffers) {
-    auto& buffers = vertexBuffers.value();
-    for (size_t i = 0; i < buffers.size(); i++) {
-      auto& buffer = buffers[i];
+  // Delete copy and move.
+  AutoDraw(const AutoDraw&) = delete;
+  AutoDraw& operator=(const AutoDraw) = delete;
+
+  /**
+   * Call the clear functions to clear the next draw call. Typically this will
+   * be used before adding any commands, so that the buffer will be cleared.
+   */
+  void Clear() { mClear = true; }
+  void Clear(mtlpp::ClearColor&& aClearColor)
+  {
+    mClear = true;
+    mClearColor = aClearColor;
+  }
+  void Clear(double red, double green, double blue, double alpha)
+  {
+    this->Clear(mtlpp::ClearColor(red, green, blue, alpha));
+  }
+  void Clear(double red, double green, double blue)
+  {
+    this->Clear(mtlpp::ClearColor(red, green, blue, 1.0));
+  }
+
+  void Render(RenderInitializer&& initializer)
+  {
+    auto& [drawPrimitiveType,
+           drawIndexCount,
+           drawIndexType,
+           drawIndexBuffer,
+           vertexBuffers,
+           fragmentBuffers,
+           cullMode,
+           depthStencilState] = initializer;
+
+    // This command doesn't know about multiple color attachments. Handle the
+    // clear statement. This was a big motiviation for originally creating this
+    // class. Essentially, the first draw call probably needs to be cleared, but
+    // the subsequent ones do not.
+    auto colorAttachment = mTick.renderPassDescriptor.GetColorAttachments()[0];
+    auto depthAttachment = mTick.renderPassDescriptor.GetDepthAttachment();
+    if (mClear) {
+      if (mClearColor) {
+        colorAttachment.SetClearColor(mClearColor.value());
+      }
+      colorAttachment.SetLoadAction(mtlpp::LoadAction::Clear);
+      depthAttachment.SetLoadAction(mtlpp::LoadAction::Clear);
+      // Only clear once.
+      mClear = false;
+    } else {
+      colorAttachment.SetLoadAction(mtlpp::LoadAction::Load);
+      depthAttachment.SetLoadAction(mtlpp::LoadAction::Load);
+    }
+
+    mtlpp::RenderCommandEncoder renderCommandEncoder =
+      mCommandBuffer.RenderCommandEncoder(mTick.renderPassDescriptor);
+
+    renderCommandEncoder.SetRenderPipelineState(mRenderPipelineState);
+
+    for (size_t i = 0; i < vertexBuffers.size(); i++) {
+      auto& buffer = vertexBuffers[i];
       ReleaseAssert(buffer, "VertexBuffer must exist.");
       renderCommandEncoder.SetVertexBuffer(*buffer, 0, i);
     }
-  }
 
-  if (fragmentBuffers) {
-    auto& buffers = fragmentBuffers.value();
-    for (size_t i = 0; i < buffers.size(); i++) {
-      auto& buffer = buffers[i];
+    for (size_t i = 0; i < fragmentBuffers.size(); i++) {
+      auto& buffer = fragmentBuffers[i];
       ReleaseAssert(buffer, "VertexBuffer must exist.");
       renderCommandEncoder.SetFragmentBuffer(*buffer, 0, i);
     }
+
+    // Handle the optional configs.
+    if (cullMode) {
+      renderCommandEncoder.SetCullMode(cullMode.value());
+    }
+
+    if (depthStencilState) {
+      renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
+    }
+
+    renderCommandEncoder.DrawIndexed(drawPrimitiveType,
+                                     drawIndexCount,
+                                     drawIndexType,
+                                     drawIndexBuffer,
+                                     // offset
+                                     0);
+
+    renderCommandEncoder.EndEncoding();
   }
 
-  renderCommandEncoder.DrawIndexed(drawPrimitiveType,
-                                   drawIndexCount,
-                                   drawIndexType,
-                                   drawIndexBuffer,
-                                   // offset
-                                   0);
+  // Dependencies.
+  mtlpp::CommandQueue& mCommandQueue;
+  Tick& mTick;
+  mtlpp::RenderPipelineState& mRenderPipelineState;
 
-  renderCommandEncoder.EndEncoding();
-  commandBuffer.Present(initializer.drawable);
+  // Owned data.
+  mtlpp::CommandBuffer mCommandBuffer;
+  bool mClear = false;
+  std::optional<mtlpp::ClearColor> mClearColor;
+};
 
-  commandBuffer.Commit();
-  commandBuffer.WaitUntilCompleted();
-}
 } // viz
