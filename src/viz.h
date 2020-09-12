@@ -9,18 +9,18 @@
 // This is the main dependency.
 #include "mtlpp/mtlpp.hpp"
 // Macros can be used everywhere.
-#include "macros.h"
+#include "viz/macros.h"
 // Assertions are general-purpose.
-#include "viz-assert.h"
+#include "viz/assert.h"
 // Includes the Cocoa bindings to start the app.
-#include "cocoa-app.h"
+#include "viz/cocoa-app.h"
 // Includes helpful utils to work with the metal API, with no Objective C.
-#include "metal-cpp.h"
+#include "viz/metal-cpp.h"
 // Includes helpful utils to work with the metal API, with Objective C work.
-#include "metal-objc.h"
+#include "viz/metal-objc.h"
 // Includes utils for .metal shader files.
-#include "shader-utils.h"
+#include "viz/shader-utils.h"
 // C++ interfaces to the GLKMath C library. Note that the name is viz-math.h
 // and not just math.h, as it makes some include resolutions ambiguous
 // otherwise.
-#include "viz-math.h"
+#include "viz/math.h"

@@ -1,4 +1,4 @@
-#include "viz-assert.h"
+#include "viz/assert.h"
 #include <exception> // std::exception
 #include <iostream>  // std::cout
 

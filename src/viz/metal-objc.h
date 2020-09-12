@@ -1,7 +1,7 @@
 #pragma once
 #include "mtlpp/mtlpp.hpp"
-#include "viz-assert.h"
-#include "viz-debug.h"
+#include "viz/assert.h"
+#include "viz/debug.h"
 #include <exception> // std::exception
 #include <span>      // std::span
 #include <sstream>   // std::ostringstream

@@ -10,9 +10,9 @@
 // Load the main viz.h file in.
 #include "viz.h"
 // Now load other extraneous things.
-#include "box.h"
-#include "geo-box.h"
-#include "viz-debug.h"
+#include "./box.h"
+#include "viz/debug.h"
+#include "viz/geo/box.h"
 
 using namespace viz;
 

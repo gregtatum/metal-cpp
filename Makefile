@@ -25,23 +25,22 @@ LDFLAGS := \
 
 INCLUDES := -Iincludes -Isrc
 
-SRC_DIR := src
-CPP_SOURCES := $(shell FIND src -type f -name *.cpp)
-OBJC_SOURCES := $(shell FIND src -type f -name *.mm)
+CPP_SOURCES := $(shell FIND src/viz -type f -name *.cpp)
+OBJC_SOURCES := $(shell FIND src/viz -type f -name *.mm)
 DEPS_SOURCES := includes/mtlpp/mtlpp.mm
 
-CPP_CODE_OBJECTS := $(patsubst src/%,build/%,$(CPP_SOURCES:.cpp=.cpp.o))
-OBJC_CODE_OBJECTS := $(patsubst src/%,build/%,$(OBJC_SOURCES:.mm=.mm.o))
+CPP_CODE_OBJECTS := $(patsubst src/viz/%,build/%,$(CPP_SOURCES:.cpp=.cpp.o))
+OBJC_CODE_OBJECTS := $(patsubst src/viz/%,build/%,$(OBJC_SOURCES:.mm=.mm.o))
 DEPS_CODE_OBJECTS := $(patsubst includes/%,build/includes/%,$(DEPS_SOURCES:.mm=.o))
 CODE_OBJECTS := $(CPP_CODE_OBJECTS) $(OBJC_CODE_OBJECTS) $(DEPS_CODE_OBJECTS)
 
 # Build C++ object files.
-build/%.cpp.o: src/%.cpp
+build/%.cpp.o: src/viz/%.cpp
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(CPPFLAGS) $(LDFLAGS) $(INCLUDES) -c $< -o $@
 
 # Build Objective C object files.
-build/%.mm.o: src/%.mm
+build/%.mm.o: src/viz/%.mm
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(OBJCFLAGS) $(INCLUDES) -c $< -o $@
 
@@ -53,13 +52,13 @@ build/includes/%.o: $(DEPS_SOURCES)
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(OBJCFLAGS) $(INCLUDES) -c $< -o $@
 
-bin/%: examples/%.cpp $(CODE_OBJECTS) bin examples/%.metal bin/%.metallib
+bin/%: src/examples/%.cpp $(CODE_OBJECTS) bin src/examples/%.metal bin/%.metallib
 	$(CC) $(CPPFLAGS) $(LDFLAGS) $(INCLUDES) $(CODE_OBJECTS) -o $@ $<
 	@echo "✨ Done building ✨"
 	@echo ""
 
 # Compile the intermediate representation of metal files.
-build/%.air: examples/%.metal
+build/%.air: src/examples/%.metal
 	xcrun -sdk macosx metal $(INCLUDES) -c $< -o $@
 
 # Build the final metallib files.
@@ -109,3 +108,8 @@ endif
 
 .PHONY: init
 init: includes/mtlpp
+
+.PHONY: all
+all:
+	make ./bin/box
+	make ./bin/bunny

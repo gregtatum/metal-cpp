@@ -1,7 +1,6 @@
-// #include "geo-box.h"
-#include "geo-box.h"
-#include "viz-debug.h"
-#include "viz-math.h"
+#include "viz/geo/box.h"
+#include "viz/debug.h"
+#include "viz/math.h"
 #include <vector>
 
 namespace viz {

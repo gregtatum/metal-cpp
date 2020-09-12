@@ -19,7 +19,7 @@ struct ModelMatrices
 
 // Begin the utilities, which will only be defined in CPU-land.
 #ifndef __METAL_VERSION__
-#include "viz-math.h"
+#include "viz/math.h"
 
 using namespace viz;
 

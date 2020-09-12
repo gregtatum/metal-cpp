@@ -1,4 +1,4 @@
-#include "shader-utils.h"
+#include "viz/shader-utils.h"
 #include <simd/simd.h>
 
 struct Uniforms

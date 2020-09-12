@@ -1,9 +1,9 @@
-#include "macros.h"
-#include "viz-debug.h"
-#include "viz-math.h"
+#include "viz/debug.h"
+#include "viz/macros.h"
+#include "viz/math.h"
+#include <vector>
 
 namespace viz {
-
 using Cells = std::vector<std::array<uint32_t, 3>>;
 using Positions = std::vector<viz::Vector3>;
 using Normals = std::vector<viz::Vector3>;
@@ -17,9 +17,6 @@ struct Mesh
   Cells cells = {};
 };
 
-Mesh
-generateBox(viz::Vector3 size, viz::Vector3 segments);
-
 VIZ_DEBUG_OBJ(mesh, Mesh, {
   VIZ_DEBUG_OBJ_HEADER(Mesh, mesh, tabDepth);
   VIZ_DEBUG_OBJ_PROP(mesh, tabDepth, positions, Positions);
@@ -29,4 +26,4 @@ VIZ_DEBUG_OBJ(mesh, Mesh, {
   VIZ_DEBUG_OBJ_FOOTER(tabDepth);
 });
 
-} // namespace viz
+}

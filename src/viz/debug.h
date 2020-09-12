@@ -1,6 +1,6 @@
 #pragma once
 #include "iostream"
-#include "viz-math.h"
+#include "viz/math.h"
 
 namespace viz {
 

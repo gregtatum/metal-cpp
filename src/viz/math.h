@@ -420,24 +420,81 @@ public:
 
   const float& operator[](int index) const { return v[index]; };
 
-  // TODO
+  bool operator<(const Vector3& other) const
+  {
+    if (v[0] != other[0]) {
+      return v[0] < other[0];
+    }
+    if (v[1] != other[1]) {
+      return v[1] < other[1];
+    }
+    return v[2] < other[2];
+  }
 
-  // GLK_INLINE GLKVector3 GLKVector3MakeWithArray(float values[3]);
+  static Vector3 Negate(const Vector3& x) { return GLKVector3Negate(x); }
 
-  // GLK_INLINE GLKVector3 GLKVector3Negate(GLKVector3 vector);
+  Vector3 operator+(const Vector3& other)
+  {
+    return GLKVector3Add(*this, other);
+  }
 
-  // GLK_INLINE GLKVector3 GLKVector3Add(GLKVector3 vectorLeft, GLKVector3
-  // vectorRight); GLK_INLINE GLKVector3 GLKVector3Subtract(GLKVector3
-  // vectorLeft, GLKVector3 vectorRight); GLK_INLINE GLKVector3
-  // GLKVector3Multiply(GLKVector3 vectorLeft, GLKVector3 vectorRight);
-  // GLK_INLINE GLKVector3 GLKVector3Divide(GLKVector3 vectorLeft, GLKVector3
-  // vectorRight);
+  Vector3 operator-(const Vector3& other)
+  {
+    return GLKVector3Subtract(*this, other);
+  }
 
-  // GLK_INLINE GLKVector3 GLKVector3AddScalar(GLKVector3 vector, float value);
-  // GLK_INLINE GLKVector3 GLKVector3SubtractScalar(GLKVector3 vector, float
-  // value); GLK_INLINE GLKVector3 GLKVector3MultiplyScalar(GLKVector3 vector,
-  // float value); GLK_INLINE GLKVector3 GLKVector3DivideScalar(GLKVector3
-  // vector, float value);
+  Vector3 operator*(const Vector3& other)
+  {
+    return GLKVector3Multiply(*this, other);
+  }
+
+  Vector3 operator+(const float& value)
+  {
+    return GLKVector3AddScalar(*this, value);
+  }
+
+  Vector3 operator-(const float& value)
+  {
+    return GLKVector3SubtractScalar(*this, value);
+  }
+
+  Vector3 operator*(const float& value)
+  {
+    return GLKVector3MultiplyScalar(*this, value);
+  }
+
+  Vector3 operator/(const float& value)
+  {
+    return GLKVector3DivideScalar(*this, value);
+  }
+
+  void operator+=(const float& value)
+  {
+    v[0] += value;
+    v[1] += value;
+    v[2] += value;
+  }
+
+  void operator-=(const float& value)
+  {
+    v[0] -= value;
+    v[1] -= value;
+    v[2] -= value;
+  }
+
+  void operator*=(const float& value)
+  {
+    v[0] *= value;
+    v[1] *= value;
+    v[2] *= value;
+  }
+
+  void operator/=(const float& value)
+  {
+    v[0] /= value;
+    v[1] /= value;
+    v[2] /= value;
+  }
 
   // /*
   //  Returns a vector whose elements are the larger of the corresponding
@@ -453,8 +510,8 @@ public:
   // vectorRight);
 
   // /*
-  //  Returns true if all of the first vector's elements are equal to all of the
-  //  second vector's arguments.
+  //  Returns true if all of the first vector's elements are equal to all of
+  //  the second vector's arguments.
   //  */
   // GLK_INLINE bool GLKVector3AllEqualToVector3(GLKVector3 vectorLeft,
   // GLKVector3 vectorRight);
@@ -462,16 +519,17 @@ public:
   //  Returns true if all of the vector's elements are equal to the provided
   //  value.
   //  */
-  // GLK_INLINE bool GLKVector3AllEqualToScalar(GLKVector3 vector, float value);
+  // GLK_INLINE bool GLKVector3AllEqualToScalar(GLKVector3 vector, float
+  // value);
   // /*
-  //  Returns true if all of the first vector's elements are greater than all of
-  //  the second vector's arguments.
+  //  Returns true if all of the first vector's elements are greater than all
+  //  of the second vector's arguments.
   //  */
   // GLK_INLINE bool GLKVector3AllGreaterThanVector3(GLKVector3 vectorLeft,
   // GLKVector3 vectorRight);
   // /*
-  //  Returns true if all of the vector's elements are greater than the provided
-  //  value.
+  //  Returns true if all of the vector's elements are greater than the
+  //  provided value.
   //  */
   // GLK_INLINE bool GLKVector3AllGreaterThanScalar(GLKVector3 vector, float
   // value);
@@ -482,13 +540,13 @@ public:
   // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToVector3(GLKVector3
   // vectorLeft, GLKVector3 vectorRight);
   // /*
-  //  Returns true if all of the vector's elements are greater than or equal to
-  //  the provided value.
+  //  Returns true if all of the vector's elements are greater than or equal
+  //  to the provided value.
   //  */
-  // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToScalar(GLKVector3 vector,
-  // float value);
+  // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToScalar(GLKVector3
+  // vector, float value);
 
-  static Vector3 Normalize(Vector3 vector)
+  static Vector3 Normalize(Vector3& vector)
   {
     return GLKVector3Normalize(vector);
   };
@@ -500,8 +558,15 @@ public:
   // GLK_INLINE float GLKVector3Distance(GLKVector3 vectorStart, GLKVector3
   // vectorEnd);
 
-  // GLK_INLINE GLKVector3 GLKVector3Lerp(GLKVector3 vectorStart, GLKVector3
-  // vectorEnd, float t);
+  static Vector3 lerp(Vector3& vectorStart, Vector3& vectorEnd, float t)
+  {
+    return GLKVector3Lerp(vectorStart, vectorEnd, t);
+  }
+
+  [[nodiscard]] Vector3 lerp(Vector3& other, float t)
+  {
+    return GLKVector3Lerp(*this, other, t);
+  }
 
   // GLK_INLINE GLKVector3 GLKVector3CrossProduct(GLKVector3 vectorLeft,
   // GLKVector3 vectorRight);

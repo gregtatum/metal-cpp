@@ -10,8 +10,8 @@
 // Load the main viz.h file in.
 #include "viz.h"
 // Now load other extraneous things.
-#include "bunny-model.h"
-#include "bunny.h"
+#include "./bunny.h"
+#include "viz/bunny-model.h"
 
 using namespace viz;
 
@@ -80,6 +80,9 @@ run()
   );
 
   TickFn tickFn = [&](Tick& tick) -> void {
+    AutoDraw draw{ commandQueue, pipeline, tick };
+    draw.Clear(0.0, 0.0, 0.0);
+
     auto projection = Matrix4::MakePerspective(
       M_PI * 0.3, tick.width / tick.height, 0.05, 100.0);
 
@@ -88,13 +91,7 @@ run()
 
     uniforms->matrices = GetModelMatrices(model, view, projection);
 
-    Render({
-      // Required pieces.
-      .commandQueue = commandQueue,
-      .renderPipelineState = pipeline,
-      .renderPassDescriptor = tick.renderPassDescriptor,
-      .drawable = tick.drawable,
-
+    draw.Render({
       // DrawIndexed options plus buffers.
       .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
       .drawIndexCount = buffers.cellsSize,
