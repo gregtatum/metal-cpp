@@ -7,6 +7,187 @@
 
 namespace viz {
 
+class Vector3 : public GLKVector3
+{
+public:
+  Vector3(GLKVector3 v)
+    : GLKVector3(v){};
+
+  Vector3(float x, float y, float z) { *this = GLKVector3Make(x, y, z); };
+
+  operator simd::float3() { return simd::float3{ v[0], v[1], v[2] }; }
+
+  const float& operator[](int index) const { return v[index]; };
+
+  bool operator<(const Vector3& other) const
+  {
+    if (v[0] != other[0]) {
+      return v[0] < other[0];
+    }
+    if (v[1] != other[1]) {
+      return v[1] < other[1];
+    }
+    return v[2] < other[2];
+  }
+
+  static Vector3 Negate(const Vector3& x) { return GLKVector3Negate(x); }
+
+  Vector3 operator+(const Vector3& other)
+  {
+    return GLKVector3Add(*this, other);
+  }
+
+  Vector3 operator-(const Vector3& other)
+  {
+    return GLKVector3Subtract(*this, other);
+  }
+
+  Vector3 operator*(const Vector3& other)
+  {
+    return GLKVector3Multiply(*this, other);
+  }
+
+  Vector3 operator+(const float& value)
+  {
+    return GLKVector3AddScalar(*this, value);
+  }
+
+  Vector3 operator-(const float& value)
+  {
+    return GLKVector3SubtractScalar(*this, value);
+  }
+
+  Vector3 operator*(const float& value)
+  {
+    return GLKVector3MultiplyScalar(*this, value);
+  }
+
+  Vector3 operator/(const float& value)
+  {
+    return GLKVector3DivideScalar(*this, value);
+  }
+
+  void operator+=(const float& value)
+  {
+    v[0] += value;
+    v[1] += value;
+    v[2] += value;
+  }
+
+  void operator-=(const float& value)
+  {
+    v[0] -= value;
+    v[1] -= value;
+    v[2] -= value;
+  }
+
+  void operator*=(const float& value)
+  {
+    v[0] *= value;
+    v[1] *= value;
+    v[2] *= value;
+  }
+
+  void operator/=(const float& value)
+  {
+    v[0] /= value;
+    v[1] /= value;
+    v[2] /= value;
+  }
+
+  // /*
+  //  Returns a vector whose elements are the larger of the corresponding
+  //  elements of the vector arguments.
+  //  */
+  // GLK_INLINE GLKVector3 GLKVector3Maximum(GLKVector3 vectorLeft, GLKVector3
+  // vectorRight);
+  // /*
+  //  Returns a vector whose elements are the smaller of the corresponding
+  //  elements of the vector arguments.
+  //  */
+  // GLK_INLINE GLKVector3 GLKVector3Minimum(GLKVector3 vectorLeft, GLKVector3
+  // vectorRight);
+
+  // /*
+  //  Returns true if all of the first vector's elements are equal to all of
+  //  the second vector's arguments.
+  //  */
+  // GLK_INLINE bool GLKVector3AllEqualToVector3(GLKVector3 vectorLeft,
+  // GLKVector3 vectorRight);
+  // /*
+  //  Returns true if all of the vector's elements are equal to the provided
+  //  value.
+  //  */
+  // GLK_INLINE bool GLKVector3AllEqualToScalar(GLKVector3 vector, float
+  // value);
+  // /*
+  //  Returns true if all of the first vector's elements are greater than all
+  //  of the second vector's arguments.
+  //  */
+  // GLK_INLINE bool GLKVector3AllGreaterThanVector3(GLKVector3 vectorLeft,
+  // GLKVector3 vectorRight);
+  // /*
+  //  Returns true if all of the vector's elements are greater than the
+  //  provided value.
+  //  */
+  // GLK_INLINE bool GLKVector3AllGreaterThanScalar(GLKVector3 vector, float
+  // value);
+  // /*
+  //  Returns true if all of the first vector's elements are greater than or
+  //  equal to all of the second vector's arguments.
+  //  */
+  // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToVector3(GLKVector3
+  // vectorLeft, GLKVector3 vectorRight);
+  // /*
+  //  Returns true if all of the vector's elements are greater than or equal
+  //  to the provided value.
+  //  */
+  // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToScalar(GLKVector3
+  // vector, float value);
+
+  static Vector3 Normalize(Vector3& vector)
+  {
+    return GLKVector3Normalize(vector);
+  };
+
+  void Normalize() { *this = GLKVector3Normalize(*this); };
+
+  // GLK_INLINE float GLKVector3DotProduct(GLKVector3 vectorLeft, GLKVector3
+  // vectorRight); GLK_INLINE float GLKVector3Length(GLKVector3 vector);
+  // GLK_INLINE float GLKVector3Distance(GLKVector3 vectorStart, GLKVector3
+  // vectorEnd);
+
+  static Vector3 lerp(Vector3& vectorStart, Vector3& vectorEnd, float t)
+  {
+    return GLKVector3Lerp(vectorStart, vectorEnd, t);
+  }
+
+  [[nodiscard]] Vector3 lerp(Vector3& other, float t)
+  {
+    return GLKVector3Lerp(*this, other, t);
+  }
+
+  // GLK_INLINE GLKVector3 GLKVector3CrossProduct(GLKVector3 vectorLeft,
+  // GLKVector3 vectorRight);
+
+  // /*
+  //  Project the vector, vectorToProject, onto the vector, projectionVector.
+  //  */
+  // GLK_INLINE GLKVector3 GLKVector3Project(GLKVector3 vectorToProject,
+  // GLKVector3 projectionVector);
+};
+
+class Vector2 : public GLKVector2
+{
+public:
+  Vector2(GLKVector2 v)
+    : GLKVector2(v){};
+
+  Vector2(float x, float y) { *this = GLKVector2Make(x, y); };
+
+  const float& operator[](int index) const { return v[index]; };
+};
+
 class Matrix3 : public GLKMatrix3
 {
 public:
@@ -26,6 +207,9 @@ class Matrix4 : public GLKMatrix4
 public:
   Matrix4(GLKMatrix4 m)
     : GLKMatrix4(m){};
+
+  Matrix4()
+    : GLKMatrix4(){};
 
   operator simd::float4x4()
   {
@@ -86,6 +270,16 @@ public:
   Matrix4(GLKQuaternion quaternion)
   {
     *this = GLKMatrix4MakeWithQuaternion(quaternion);
+  };
+
+  static Matrix4 MakeTranslation(Vector3 v)
+  {
+    return GLKMatrix4MakeTranslation(v[0], v[1], v[2]);
+  };
+
+  static Matrix4 MakeTranslation(simd::float3 v)
+  {
+    return GLKMatrix4MakeTranslation(v[0], v[1], v[2]);
   };
 
   static Matrix4 MakeTranslation(float tx, float ty, float tz)
@@ -410,183 +604,22 @@ ComputeAngleNormalsPacked(const std::span<Integer>& cells,
   return normals;
 }
 
-class Vector3 : public GLKVector3
+float
+Random();
+
+float
+Random(float range);
+
+float
+Random(float rangeMin, float rangeMax);
+
+struct RandomSphericalInitializer
 {
-public:
-  Vector3(GLKVector3 v)
-    : GLKVector3(v){};
-
-  Vector3(float x, float y, float z) { *this = GLKVector3Make(x, y, z); };
-
-  const float& operator[](int index) const { return v[index]; };
-
-  bool operator<(const Vector3& other) const
-  {
-    if (v[0] != other[0]) {
-      return v[0] < other[0];
-    }
-    if (v[1] != other[1]) {
-      return v[1] < other[1];
-    }
-    return v[2] < other[2];
-  }
-
-  static Vector3 Negate(const Vector3& x) { return GLKVector3Negate(x); }
-
-  Vector3 operator+(const Vector3& other)
-  {
-    return GLKVector3Add(*this, other);
-  }
-
-  Vector3 operator-(const Vector3& other)
-  {
-    return GLKVector3Subtract(*this, other);
-  }
-
-  Vector3 operator*(const Vector3& other)
-  {
-    return GLKVector3Multiply(*this, other);
-  }
-
-  Vector3 operator+(const float& value)
-  {
-    return GLKVector3AddScalar(*this, value);
-  }
-
-  Vector3 operator-(const float& value)
-  {
-    return GLKVector3SubtractScalar(*this, value);
-  }
-
-  Vector3 operator*(const float& value)
-  {
-    return GLKVector3MultiplyScalar(*this, value);
-  }
-
-  Vector3 operator/(const float& value)
-  {
-    return GLKVector3DivideScalar(*this, value);
-  }
-
-  void operator+=(const float& value)
-  {
-    v[0] += value;
-    v[1] += value;
-    v[2] += value;
-  }
-
-  void operator-=(const float& value)
-  {
-    v[0] -= value;
-    v[1] -= value;
-    v[2] -= value;
-  }
-
-  void operator*=(const float& value)
-  {
-    v[0] *= value;
-    v[1] *= value;
-    v[2] *= value;
-  }
-
-  void operator/=(const float& value)
-  {
-    v[0] /= value;
-    v[1] /= value;
-    v[2] /= value;
-  }
-
-  // /*
-  //  Returns a vector whose elements are the larger of the corresponding
-  //  elements of the vector arguments.
-  //  */
-  // GLK_INLINE GLKVector3 GLKVector3Maximum(GLKVector3 vectorLeft, GLKVector3
-  // vectorRight);
-  // /*
-  //  Returns a vector whose elements are the smaller of the corresponding
-  //  elements of the vector arguments.
-  //  */
-  // GLK_INLINE GLKVector3 GLKVector3Minimum(GLKVector3 vectorLeft, GLKVector3
-  // vectorRight);
-
-  // /*
-  //  Returns true if all of the first vector's elements are equal to all of
-  //  the second vector's arguments.
-  //  */
-  // GLK_INLINE bool GLKVector3AllEqualToVector3(GLKVector3 vectorLeft,
-  // GLKVector3 vectorRight);
-  // /*
-  //  Returns true if all of the vector's elements are equal to the provided
-  //  value.
-  //  */
-  // GLK_INLINE bool GLKVector3AllEqualToScalar(GLKVector3 vector, float
-  // value);
-  // /*
-  //  Returns true if all of the first vector's elements are greater than all
-  //  of the second vector's arguments.
-  //  */
-  // GLK_INLINE bool GLKVector3AllGreaterThanVector3(GLKVector3 vectorLeft,
-  // GLKVector3 vectorRight);
-  // /*
-  //  Returns true if all of the vector's elements are greater than the
-  //  provided value.
-  //  */
-  // GLK_INLINE bool GLKVector3AllGreaterThanScalar(GLKVector3 vector, float
-  // value);
-  // /*
-  //  Returns true if all of the first vector's elements are greater than or
-  //  equal to all of the second vector's arguments.
-  //  */
-  // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToVector3(GLKVector3
-  // vectorLeft, GLKVector3 vectorRight);
-  // /*
-  //  Returns true if all of the vector's elements are greater than or equal
-  //  to the provided value.
-  //  */
-  // GLK_INLINE bool GLKVector3AllGreaterThanOrEqualToScalar(GLKVector3
-  // vector, float value);
-
-  static Vector3 Normalize(Vector3& vector)
-  {
-    return GLKVector3Normalize(vector);
-  };
-
-  void Normalize() { *this = GLKVector3Normalize(*this); };
-
-  // GLK_INLINE float GLKVector3DotProduct(GLKVector3 vectorLeft, GLKVector3
-  // vectorRight); GLK_INLINE float GLKVector3Length(GLKVector3 vector);
-  // GLK_INLINE float GLKVector3Distance(GLKVector3 vectorStart, GLKVector3
-  // vectorEnd);
-
-  static Vector3 lerp(Vector3& vectorStart, Vector3& vectorEnd, float t)
-  {
-    return GLKVector3Lerp(vectorStart, vectorEnd, t);
-  }
-
-  [[nodiscard]] Vector3 lerp(Vector3& other, float t)
-  {
-    return GLKVector3Lerp(*this, other, t);
-  }
-
-  // GLK_INLINE GLKVector3 GLKVector3CrossProduct(GLKVector3 vectorLeft,
-  // GLKVector3 vectorRight);
-
-  // /*
-  //  Project the vector, vectorToProject, onto the vector, projectionVector.
-  //  */
-  // GLK_INLINE GLKVector3 GLKVector3Project(GLKVector3 vectorToProject,
-  // GLKVector3 projectionVector);
+  float radius = 1.0;
+  Vector3 center = { 0.0, 0.0, 0.0 };
 };
 
-class Vector2 : public GLKVector2
-{
-public:
-  Vector2(GLKVector2 v)
-    : GLKVector2(v){};
-
-  Vector2(float x, float y) { *this = GLKVector2Make(x, y); };
-
-  const float& operator[](int index) const { return v[index]; };
-};
+Vector3
+RandomSpherical(RandomSphericalInitializer&& initializer);
 
 } // namespace viz

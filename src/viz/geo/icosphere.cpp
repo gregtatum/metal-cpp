@@ -49,7 +49,7 @@ subdivide(Mesh& mesh)
 }
 
 Mesh
-generateIcosphere(IcosphereInitializer initializer = {})
+generateIcosphere(IcosphereInitializer initializer)
 {
   Positions positions{};
   Cells cells{};
