@@ -24,8 +24,10 @@ const metalValidation = {
   MTL_SHADER_VALIDATION_TEXTURE_USAGE: '1',
 };
 
+console.clear();
 buildAndRun();
 watchFiles();
+listenToKeyboard();
 
 process.on('SIGINT', function() {
   console.log('Closing the example');
@@ -57,6 +59,51 @@ function closeSubprocess() {
     console.error('Unable to close the example ' + example);
     process.exit(1);
   }
+}
+
+function listenToKeyboard() {
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', function(key) {
+    switch (key) {
+      case 'c':
+        try {
+          console.clear();
+          console.log('🧹 Cleaning all of the C++ files.');
+          console.log('');
+          execSync(`make clean-cpp`, {cwd: rootPath, stdio: 'inherit'});
+        } catch (error) {
+          console.error('🛑 Could not clean the C++ files. ' + example);
+          return false;
+        }
+        closeAndRebuild();
+        break;
+      case 'a':
+        console.clear();
+        console.log('🧹 It\'s time for a fresh start');
+        console.log('');
+        try {
+          execSync(`make clean`, {cwd: rootPath, stdio: 'inherit'});
+        } catch (error) {
+          console.error('🛑 Could not clean the files. ' + example);
+          return false;
+        }
+        closeAndRebuild();
+        break;
+      case 'q':
+      case '\u0003':
+        process.exit();
+    }
+  });
+  console.log('');
+  console.log('-------------------------');
+  console.log('| Keyboard shortcuts:   |');
+  console.log('-------------------------');
+  console.log('  c - Clean the C++ files');
+  console.log('  a - Clean all the files');
+  console.log('  q - Quit');
+  console.log('');
 }
 
 function runExample() {
@@ -111,12 +158,16 @@ function handleFileChange(...args) {
     const [fileName, prevStat, currState] = args;
     console.clear();
     console.log('🙈 File change detected', fileName);
-    if (exampleSubProcess) {
-      closeSubprocess();
-      exampleSubProcess = null;
-    }
-    buildAndRun();
+    closeAndRebuild();
   }
+}
+
+function closeAndRebuild() {
+  if (exampleSubProcess) {
+    closeSubprocess();
+    exampleSubProcess = null;
+  }
+  buildAndRun();
 }
 
 function watchFiles() {
