@@ -24,7 +24,7 @@ const metalValidation = {
   MTL_SHADER_VALIDATION_TEXTURE_USAGE: '1',
 };
 
-console.clear();
+clearConsole();
 buildAndRun();
 watchFiles();
 listenToKeyboard();
@@ -59,6 +59,7 @@ function closeSubprocess() {
     console.error('Unable to close the example ' + example);
     process.exit(1);
   }
+  exampleSubProcess = null;
 }
 
 function listenToKeyboard() {
@@ -69,7 +70,7 @@ function listenToKeyboard() {
     switch (key) {
       case 'c':
         try {
-          console.clear();
+          clearConsole();
           console.log('🧹 Cleaning all of the C++ files.');
           console.log('');
           execSync(`make clean-cpp`, {cwd: rootPath, stdio: 'inherit'});
@@ -80,7 +81,7 @@ function listenToKeyboard() {
         closeAndRebuild();
         break;
       case 'a':
-        console.clear();
+        clearConsole();
         console.log('🧹 It\'s time for a fresh start');
         console.log('');
         try {
@@ -91,8 +92,14 @@ function listenToKeyboard() {
         }
         closeAndRebuild();
         break;
+      case 'r':
+        closeSubprocess();
+        clearConsole();
+        runExample();
+        break;
       case 'q':
       case '\u0003':
+        closeSubprocess();
         process.exit();
     }
   });
@@ -102,6 +109,7 @@ function listenToKeyboard() {
   console.log('-------------------------');
   console.log('  c - Clean the C++ files');
   console.log('  a - Clean all the files');
+  console.log('  r - Restart the example');
   console.log('  q - Quit');
   console.log('');
 }
@@ -156,7 +164,7 @@ function handleFileChange(...args) {
     // This is the first run, do nothing.
   } else {
     const [fileName, prevStat, currState] = args;
-    console.clear();
+    clearConsole();
     console.log('🙈 File change detected', fileName);
     closeAndRebuild();
   }
@@ -165,7 +173,6 @@ function handleFileChange(...args) {
 function closeAndRebuild() {
   if (exampleSubProcess) {
     closeSubprocess();
-    exampleSubProcess = null;
   }
   buildAndRun();
 }
@@ -199,4 +206,11 @@ function getExample() {
     error('Examples should only be alphanumeric with dashes or underscores.');
   }
   return example;
+}
+
+function clearConsole() {
+  process.stdout.write('\033[2J\033[3J\033[1;1H');
+  // process.stdout.write('\x1Bc');
+  // console.log('\033]50;ClearScrollback\a');
+  // printf '\033[2J\033[3J\033[1;1H'
 }
