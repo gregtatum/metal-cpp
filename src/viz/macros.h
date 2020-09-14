@@ -1,14 +1,13 @@
 #define VIZ_DEBUG_OBJ_PROP(obj, tabDepth, property, propertyType)              \
   DebugIndent(tabDepth + 1);                                                   \
   std::cout << #property << ": ";                                              \
-  ::viz::DebugWithoutNewline<propertyType>(obj.property, tabDepth + 1);
+  ::viz::DebugWithoutNewline<propertyType>(obj.property, tabDepth + 1);        \
+  std::cout << ",\n";
 
 #define VIZ_DEBUG_OBJ_HEADER(objType, obj, tabDepth)                           \
-  DebugIndent(tabDepth);                                                       \
-  std::cout << "Mesh {\n";
+  std::cout << #objType << " {\n";
 
 #define VIZ_DEBUG_OBJ_FOOTER(tabDepth)                                         \
-  std::cout << ",\n";                                                          \
   DebugIndent(tabDepth);                                                       \
   std::cout << "}";
 
@@ -22,7 +21,7 @@
   template<>                                                                   \
   struct tag<ClassName>                                                        \
   {                                                                            \
-    typedef mesh type;                                                         \
+    typedef traitName type;                                                    \
     typedef empty child;                                                       \
   };                                                                           \
   }                                                                            \

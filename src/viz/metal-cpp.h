@@ -67,7 +67,7 @@ InitializeDepthStencil(DepthStencilInitializer&& initializer)
 
 struct RenderInitializer
 {
-  // DrawIndexed options plus buffers.
+  mtlpp::RenderPipelineState renderPipelineState;
   mtlpp::PrimitiveType drawPrimitiveType;
   uint32_t drawIndexCount;
   mtlpp::IndexType drawIndexType;
@@ -121,11 +121,8 @@ struct RenderInitializer
 class AutoDraw
 {
 public:
-  AutoDraw(mtlpp::CommandQueue& aCommandQueue,
-           mtlpp::RenderPipelineState& aRenderPipelineState,
-           Tick& aTick)
+  AutoDraw(mtlpp::CommandQueue& aCommandQueue, Tick& aTick)
     : mCommandQueue(aCommandQueue)
-    , mRenderPipelineState(aRenderPipelineState)
     , mTick(aTick)
   {
     mCommandBuffer = mCommandQueue.CommandBuffer();
@@ -163,7 +160,8 @@ public:
 
   void Render(RenderInitializer&& initializer)
   {
-    auto& [drawPrimitiveType,
+    auto& [renderPipelineState,
+           drawPrimitiveType,
            drawIndexCount,
            drawIndexType,
            drawIndexBuffer,
@@ -194,7 +192,7 @@ public:
     mtlpp::RenderCommandEncoder renderCommandEncoder =
       mCommandBuffer.RenderCommandEncoder(mTick.renderPassDescriptor);
 
-    renderCommandEncoder.SetRenderPipelineState(mRenderPipelineState);
+    renderCommandEncoder.SetRenderPipelineState(renderPipelineState);
 
     for (size_t i = 0; i < vertexBuffers.size(); i++) {
       auto& buffer = vertexBuffers[i];
@@ -230,7 +228,6 @@ public:
   // Dependencies.
   mtlpp::CommandQueue& mCommandQueue;
   Tick& mTick;
-  mtlpp::RenderPipelineState& mRenderPipelineState;
 
   // Owned data.
   mtlpp::CommandBuffer mCommandBuffer;

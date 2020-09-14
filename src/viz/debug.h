@@ -11,6 +11,9 @@ struct empty {};
 struct pod {};
 struct tuple2 {};
 struct tuple3 {};
+struct tuple4 {};
+struct float3x3 {};
+struct float4x4 {};
 struct list {};
 // clang-format on
 
@@ -36,6 +39,18 @@ struct tag<Vector3>
   typedef tuple3 type;
   typedef empty child;
 };
+template<>
+struct tag<simd::float3>
+{
+  typedef tuple3 type;
+  typedef empty child;
+};
+template<>
+struct tag<simd::float4>
+{
+  typedef tuple4 type;
+  typedef empty child;
+};
 template<typename Child>
 struct tag<std::array<Child, 3>>
 {
@@ -47,6 +62,18 @@ struct tag<Vector2>
 {
   typedef tuple2 type;
   typedef empty child;
+};
+template<>
+struct tag<simd::float3x3>
+{
+  typedef float3x3 type;
+  typedef simd::float3 child;
+};
+template<>
+struct tag<simd::float4x4>
+{
+  typedef float4x4 type;
+  typedef simd::float4 child;
 };
 template<typename Child>
 struct tag<std::vector<Child>>
@@ -95,6 +122,63 @@ struct debug<traits::tuple3, T>
   {
     DebugIndent(tabDepth);
     std::cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]";
+  }
+};
+
+template<typename T>
+struct debug<traits::tuple4, T>
+{
+  static void apply(T const& v, size_t tabDepth = 0)
+  {
+    DebugIndent(tabDepth);
+    std::cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << ", " << v[3]
+              << "]";
+  }
+};
+
+template<typename T>
+struct debug<traits::float3x3, T>
+{
+  static void apply(T const& m, size_t tabDepth = 0)
+  {
+    using Child = typename traits::tag<T>::child;
+    using ChildType = typename traits::tag<Child>::type;
+
+    std::cout << "[" << std::endl;
+
+    debug<traits::tuple3, simd::float3>::apply(m.columns[0], tabDepth + 1);
+    std::cout << "," << std::endl;
+    debug<traits::tuple3, simd::float3>::apply(m.columns[1], tabDepth + 1);
+    std::cout << "," << std::endl;
+    debug<traits::tuple3, simd::float3>::apply(m.columns[2], tabDepth + 1);
+    std::cout << "," << std::endl;
+
+    DebugIndent(tabDepth);
+    std::cout << "]";
+  }
+};
+
+template<typename T>
+struct debug<traits::float4x4, T>
+{
+  static void apply(T const& m, size_t tabDepth = 0)
+  {
+    using Child = typename traits::tag<T>::child;
+    using ChildType = typename traits::tag<Child>::type;
+
+    std::cout << "[" << std::endl;
+
+    debug<traits::tuple4, simd::float4>::apply(m.columns[0], tabDepth + 1);
+    std::cout << "," << std::endl;
+    debug<traits::tuple4, simd::float4>::apply(m.columns[1], tabDepth + 1);
+    std::cout << "," << std::endl;
+    debug<traits::tuple4, simd::float4>::apply(m.columns[2], tabDepth + 1);
+    std::cout << "," << std::endl;
+    debug<traits::tuple4, simd::float4>::apply(m.columns[2], tabDepth + 1);
+    std::cout << "," << std::endl;
+
+    DebugIndent(tabDepth);
+    std::cout << "]";
   }
 };
 

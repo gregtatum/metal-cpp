@@ -270,6 +270,5 @@ viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
   [appMenuItem setSubmenu:appMenu];
   [app setMainMenu:mainMenu];
 
-  [app activateIgnoringOtherApps:YES];
   [app run];
 }

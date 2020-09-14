@@ -19,8 +19,23 @@ struct ModelMatrices
 
 // Begin the utilities, which will only be defined in CPU-land.
 #ifndef __METAL_VERSION__
-#include "viz/math.h"
+#include "viz/debug.h"
+namespace viz {
+VIZ_DEBUG_OBJ(modelMatrices, ModelMatrices, {
+  VIZ_DEBUG_OBJ_HEADER(ModelMatrices, modelMatrices, tabDepth);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, normalModelView, simd::float3x3);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, normalModel, simd::float3x3);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, normalView, simd::float3x3);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, model, simd::float4x4);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, view, simd::float4x4);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, projection, simd::float4x4);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, modelView, simd::float4x4);
+  VIZ_DEBUG_OBJ_PROP(modelMatrices, tabDepth, modelViewProj, simd::float4x4);
+  VIZ_DEBUG_OBJ_FOOTER(tabDepth);
+});
+}
 
+#include "viz/math.h"
 using namespace viz;
 
 ModelMatrices

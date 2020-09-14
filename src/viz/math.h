@@ -1,8 +1,10 @@
 #pragma once
 #include <GLKit/GLKMath.h>
 #include <algorithm> // std::min
+#include <random>
 #include <simd/simd.h>
 #include <span>
+#include <stdlib.h> // abs
 #include <vector>
 
 namespace viz {
@@ -612,6 +614,18 @@ Random(float range);
 
 float
 Random(float rangeMin, float rangeMax);
+
+/**
+ * Generates numbers that tend to be lower, based on the exponent provided.
+ */
+float
+RandomPow(size_t pow);
+
+float
+RandomPow(float range, size_t pow);
+
+float
+RandomPow(float rangeMin, float rangeMax, size_t pow);
 
 struct RandomSphericalInitializer
 {
