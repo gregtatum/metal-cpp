@@ -1,3 +1,4 @@
+#include "viz/draw/big-triangle.h"
 #include "viz/shader-utils.h"
 #include <simd/simd.h>
 
@@ -6,7 +7,7 @@ struct SpherePropsUniforms
   float brightness;
   float scale;
 };
-
+//
 struct SceneUniforms
 {
   float seconds;

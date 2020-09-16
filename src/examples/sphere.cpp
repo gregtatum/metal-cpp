@@ -111,9 +111,10 @@ CreateScene(Device& device)
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
     }),
 
-    .bigTriangle = BigTriangle{ device,
+    .bigTriangle = BigTriangle{ "Sphere Background",
+                                device,
                                 library,
-                                library.NewFunction("bigTriangleBackground") },
+                                library.NewFunction("bigTriangleFragExample") },
 
     .cellsSize = static_cast<uint32_t>(mesh.cells.size() * 3),
     .writeDepth = InitializeDepthStencil({
@@ -150,7 +151,8 @@ DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
       uniforms->matrices =
         GetModelMatrices(model, scene.view, scene.projection);
 
-      draw.Render({
+      draw.DrawIndexed({
+        .label = "DrawSmallSpheres",
         .renderPipelineState = scene.smallSpherePipeline,
         .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
         .drawIndexCount = scene.cellsSize,
@@ -184,7 +186,8 @@ DrawBigSphere(AutoDraw& draw, Tick& tick, Scene& scene)
   scene.bigSphereUniforms.data->matrices =
     GetModelMatrices(model, scene.view, scene.projection);
 
-  draw.Render({
+  draw.DrawIndexed({
+    .label = "DrawBigSphere",
     .renderPipelineState = scene.bigSpherePipeline,
     .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
     .drawIndexCount = scene.cellsSize,
@@ -231,8 +234,9 @@ run()
     scene.projection = Matrix4::MakePerspective(
       M_PI * 0.3, tick.width / tick.height, 0.05, 100.0);
 
+    scene.bigTriangle.Draw(draw);
     DrawBigSphere(draw, tick, scene);
-    DrawSmallSpheres(draw, tick, scene);
+    // DrawSmallSpheres(draw, tick, scene);
   };
 
   InitApp(device, &tickFn);

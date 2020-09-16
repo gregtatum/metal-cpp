@@ -91,7 +91,8 @@ run()
 
     uniforms->matrices = GetModelMatrices(model, view, projection);
 
-    draw.Render({
+    draw.DrawIndexed({
+      .label = "Bunny",
       // DrawIndexed options plus buffers.
       .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
       .drawIndexCount = buffers.cellsSize,

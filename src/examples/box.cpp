@@ -114,7 +114,8 @@ run()
         uniforms.data->position = { x, y, z };
         uniforms.data->seconds = tick.seconds;
 
-        draw.Render({
+        draw.DrawIndexed({
+          .label = "Box",
           // DrawIndexed options plus buffers.
           .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
           .drawIndexCount = buffers.cellsSize,

@@ -7,6 +7,9 @@ namespace viz {
 ErrorMessage::ErrorMessage(const char* message)
   : mMessage(message){};
 
+ErrorMessage::ErrorMessage(std::string&& message)
+  : mMessage(message){};
+
 /**
  * This function should be called from the `int main()` function. It will ensure
  * that the exceptions are caught, displayed, and properly unwound when thrown.

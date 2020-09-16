@@ -1,20 +1,15 @@
+#pragma once
 #include <simd/simd.h>
-
-struct BigTriangleVaryings
-{
-  simd::float2 uv;
-};
 
 #ifdef __METAL_VERSION__
 
-struct Varying
+struct BigTriangleVarying
 {
   float2 uv;
   float4 position [[position]];
 };
 
 #else
-
 #include "viz.h"
 
 namespace viz {
@@ -23,16 +18,18 @@ class BigTriangle
 {
 public:
   BigTriangle() = delete;
-  explicit BigTriangle(Device& device,
+  explicit BigTriangle(const char* label,
+                       Device& device,
                        mtlpp::Library& library,
                        mtlpp::Function&& fragmentFunction);
 
   void Draw(AutoDraw& draw);
-  BufferViewList<std::vector<viz::Vector3>> mPositions;
-  BufferViewList<std::vector<std::array<uint32_t, 3>>> mCells;
+  BufferViewList<viz::Vector2> mPositions;
+  BufferViewList<std::array<uint32_t, 3>> mCells;
   BufferViewStruct<VizTickUniforms> mTickUniforms;
   mtlpp::RenderPipelineState mPipeline;
   mtlpp::DepthStencilState mDepth;
+  const char* mLabel;
 };
 
 } // namespace viz

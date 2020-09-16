@@ -13,6 +13,7 @@ const rootPath = path.join(__dirname, "..");
 const example = getExample();
 let exampleSubProcess;
 let isClosingSubProcess = false;
+let keepExampleClosed = false;
 
 const metalValidation = {
   // Enables all shader validation tests.
@@ -30,7 +31,7 @@ buildAndRun();
 watchFiles();
 listenToKeyboard();
 
-process.on("SIGINT", function () {
+process.on("SIGINT", function (...args) {
   console.log("Closing the example");
   exampleSubProcess.kill();
   process.exit(0);
@@ -38,7 +39,12 @@ process.on("SIGINT", function () {
 
 function buildAndRun() {
   if (build()) {
-    runExample();
+    if (keepExampleClosed) {
+      printShortcuts();
+      console.log('Hit "r" to re-launch the example');
+    } else {
+      runExample();
+    }
   }
 }
 
@@ -99,6 +105,7 @@ function listenToKeyboard() {
         closeSubprocess();
         clearConsole();
         runExample();
+        keepExampleClosed = false;
         break;
       case "q":
       case "\u0003":
@@ -106,6 +113,10 @@ function listenToKeyboard() {
         process.exit();
     }
   });
+  printShortcuts();
+}
+
+function printShortcuts() {
   console.log("");
   console.log("-------------------------");
   console.log("| Keyboard shortcuts:   |");
@@ -135,9 +146,15 @@ function runExample() {
   exampleSubProcess.on("close", (code, signal) => {
     if (isClosingSubProcess) {
       isClosingSubProcess = false;
+    } else if (signal === "SIGABRT") {
+      console.log("Example crashed, waiting for file changes to relaunch");
+      exampleSubProcess = null;
+      isClosingSubProcess = false;
     } else {
-      console.log("Example closed, stopped watching for changes.");
-      process.exit(0);
+      console.log('Example closed, hit "r" to re-launch it.');
+      exampleSubProcess = null;
+      isClosingSubProcess = false;
+      keepExampleClosed = true;
     }
   });
 }

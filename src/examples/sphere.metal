@@ -2,6 +2,7 @@
 #include <metal_stdlib>
 using namespace metal;
 #include "./sphere.h"
+#include "viz/draw/big-triangle.h"
 
 vertex Varying
 smallSphereVert(const device packed_float3* vertexArray [[buffer(0)]],

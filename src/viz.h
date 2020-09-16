@@ -14,10 +14,9 @@
 #include "viz/assert.h"
 // Includes the Cocoa bindings to start the app.
 #include "viz/cocoa-app.h"
-// Includes helpful utils to work with the metal API, with no Objective C.
-#include "viz/metal-cpp.h"
-// Includes helpful utils to work with the metal API, with Objective C work.
-#include "viz/metal-objc.h"
+// Includes helpful utils to work with the metal API, especially with Objective
+// C work.
+#include "viz/metal.h"
 // Includes utils for .metal shader files.
 #include "viz/shader-utils.h"
 // C++ interfaces to the GLKMath C library. Note that the name is viz-math.h

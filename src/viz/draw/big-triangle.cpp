@@ -3,18 +3,19 @@
 
 namespace viz {
 
-BigTriangle::BigTriangle(Device& device,
+BigTriangle::BigTriangle(const char* label,
+                         Device& device,
                          mtlpp::Library& library,
                          mtlpp::Function&& fragmentFunction)
-  : mPositions(BufferViewList<std::vector<Vector3>>(
-      device,
-      mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
-      std::vector<Vector3>{
-        { -10.0, -10.0, 0.0 },
-        { -10.0, 10.0, 0.0 },
-        { 10.0, 0.0, 0.0 },
-      }))
-  , mCells(BufferViewList<std::vector<std::array<uint32_t, 3>>>(
+  : mPositions(
+      BufferViewList<Vector2>(device,
+                              mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
+                              std::vector<Vector2>{
+                                { -1.0, -1.0 },
+                                { -1.0, 4.0 },
+                                { 4.0, -1.0 },
+                              }))
+  , mCells(BufferViewList<std::array<uint32_t, 3>>(
       device,
       mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
       std::vector<std::array<uint32_t, 3>>{ { 0, 1, 2 } }))
@@ -25,7 +26,7 @@ BigTriangle::BigTriangle(Device& device,
       .device = device,
       .label = "Big Triangle",
       .vertexFunction = library.NewFunction("bigTriangleVert"),
-      .fragmentFunction = fragmentFunction,
+      .fragmentFunction = library.NewFunction("bigTriangleFragExample"),
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
       .colorAttachmentPixelFormats =
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
@@ -33,20 +34,20 @@ BigTriangle::BigTriangle(Device& device,
   , mDepth(InitializeDepthStencil({
       .device = device,
       .depthCompareFunction = mtlpp::CompareFunction::LessEqual,
-      .depthWriteEnabled = false,
+      .depthWriteEnabled = true,
     }))
+  , mLabel(label)
 {}
 
 void
 BigTriangle::Draw(AutoDraw& draw)
 {
-  draw.Render({
+  draw.Draw({
+    .label = mLabel,
     .renderPipelineState = mPipeline,
     .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-    // 3 Triangles with 3 positions each = 9.
-    .drawIndexCount = 9,
-    .drawIndexType = mtlpp::IndexType::UInt32,
-    .drawIndexBuffer = mCells.buffer,
+    .vertexStart = 0,
+    .vertexCount = 3,
     .vertexBuffers = std::vector({
       &mPositions.buffer,
     }),

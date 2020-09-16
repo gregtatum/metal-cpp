@@ -1,6 +1,7 @@
 #pragma once
 #include <exception> // std::exception
 #include <iostream>  // std::cout
+#include <string>
 
 namespace viz {
 
@@ -8,8 +9,9 @@ class ErrorMessage : public std::exception
 {
 public:
   explicit ErrorMessage(const char* message);
+  explicit ErrorMessage(std::string&& message);
   const char* what();
-  const char* mMessage;
+  const std::string mMessage;
 };
 
 /**
