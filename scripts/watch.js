@@ -7,6 +7,7 @@
 
 const watch = require("watch");
 const path = require("path");
+const fs = require("fs");
 const { spawn, spawnSync, exec, execSync } = require("child_process");
 const rootPath = path.join(__dirname, "..");
 const example = getExample();
@@ -53,13 +54,15 @@ function build() {
 }
 
 function closeSubprocess() {
-  isClosingSubProcess = true;
-  const success = exampleSubProcess.kill();
-  if (!success) {
-    console.error("Unable to close the example " + example);
-    process.exit(1);
+  if (exampleSubProcess) {
+    isClosingSubProcess = true;
+    const success = exampleSubProcess.kill();
+    if (!success) {
+      console.error("Unable to close the example " + example);
+      process.exit(1);
+    }
+    exampleSubProcess = null;
   }
-  exampleSubProcess = null;
 }
 
 function listenToKeyboard() {
@@ -159,16 +162,11 @@ function runExample() {
 //   ctime: 2020-09-01T13:37:25.656Z,
 //   birthtime: 2020-08-17T18:21:14.814Z
 // }
-function handleFileChange(...args) {
-  if (!args[1]) {
-    const [allStats] = args;
-    // This is the first run, do nothing.
-  } else {
-    const [fileName, prevStat, currState] = args;
-    clearConsole();
-    console.log("🙈 File change detected", fileName);
-    closeAndRebuild();
-  }
+
+function handleFileChange(fileName) {
+  clearConsole();
+  console.log("🙈 File change detected", fileName);
+  closeAndRebuild();
 }
 
 function closeAndRebuild() {
@@ -179,11 +177,26 @@ function closeAndRebuild() {
 }
 
 function watchFiles() {
-  const paths = [path.join(__dirname, "../src")];
-  for (const path of paths) {
+  const dirs = [path.join(__dirname, "../src")];
+  const files = [path.join(__dirname, "../Makefile")];
+  const options = { interval: 0.5 };
+
+  for (const fileName of files) {
+    fs.watch(fileName, options, (eventType, maybeFileName) => {
+      handleFileChange(fileName);
+    });
+  }
+  for (const dir of dirs) {
     // Interval is in seconds.
-    const options = { interval: 0.5 };
-    watch.watchTree(path, options, handleFileChange);
+    watch.watchTree(dir, options, (...args) => {
+      if (!args[1]) {
+        const [allStats] = args;
+        // This is the first run, do nothing.
+      } else {
+        const [fileName, prevStat, currState] = args;
+        handleFileChange(fileName);
+      }
+    });
   }
   console.log("👀 Watching the tree");
 }
