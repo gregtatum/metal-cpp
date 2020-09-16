@@ -11,6 +11,7 @@
 #include "viz.h"
 // Now load other extraneous things.
 #include "./sphere.h"
+#include "viz/draw/big-triangle.h"
 #include "viz/geo/icosphere.h"
 
 using namespace viz;
@@ -21,11 +22,16 @@ struct Scene
   BufferViewList<std::array<uint32_t, 3>> cells;
   BufferViewList<Vector3> normals;
   BufferViewStruct<SceneUniforms> sceneUniforms;
+
   std::vector<BufferViewStruct<ModelUniforms>> smallSphereUniforms;
   std::vector<BufferViewStruct<SpherePropsUniforms>> spherePropsUniforms;
   mtlpp::RenderPipelineState smallSpherePipeline;
+
   BufferViewStruct<ModelUniforms> bigSphereUniforms;
   mtlpp::RenderPipelineState bigSpherePipeline;
+
+  BigTriangle bigTriangle;
+
   uint32_t cellsSize;
   mtlpp::DepthStencilState writeDepth;
   mtlpp::DepthStencilState ignoreDepth;
@@ -104,6 +110,10 @@ CreateScene(Device& device)
       .colorAttachmentPixelFormats =
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
     }),
+
+    .bigTriangle = BigTriangle{ device,
+                                library,
+                                library.NewFunction("bigTriangleBackground") },
 
     .cellsSize = static_cast<uint32_t>(mesh.cells.size() * 3),
     .writeDepth = InitializeDepthStencil({
@@ -212,7 +222,7 @@ run()
   );
 
   TickFn tickFn = [&](Tick& tick) -> void {
-    AutoDraw draw{ commandQueue, tick };
+    AutoDraw draw{ device, commandQueue, tick };
 
     draw.Clear(0.0f, 0.0f, 0.0f);
 

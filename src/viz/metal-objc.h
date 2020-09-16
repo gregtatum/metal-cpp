@@ -91,8 +91,10 @@ struct BufferViewStruct
 template<typename T>
 struct BufferViewList
 {
+  BufferViewList(const BufferViewList&) = delete;
+
   template<typename List>
-  BufferViewList(Device& device, mtlpp::ResourceOptions options, List& list)
+  BufferViewList(Device& device, mtlpp::ResourceOptions options, List&& list)
   {
     uint32_t bytes = sizeof(list[0]) * list.size();
     buffer = device.NewBuffer(&list[0], bytes, options);

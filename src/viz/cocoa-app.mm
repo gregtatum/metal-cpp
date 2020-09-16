@@ -161,9 +161,10 @@
 - (void)mouseMoved:(NSEvent*)event
 {
   NSPoint position = [event locationInWindow];
-  _tick->mouse =
-    viz::Vec2<double>{ position.x * self.window.backingScaleFactor,
-                       position.y * self.window.backingScaleFactor };
+  _tick->mouse = viz::Vec2<float>{
+    static_cast<float>(position.x * self.window.backingScaleFactor),
+    static_cast<float>(position.y * self.window.backingScaleFactor)
+  };
 }
 
 - (void)mouseExited:(NSEvent*)event

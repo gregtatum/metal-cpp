@@ -17,6 +17,22 @@ struct ModelMatrices
   simd::float4x4 modelViewProj;
 };
 
+struct VizTickUniforms
+{
+  // The amount of time passed in milliseconds.
+  float milliseconds;
+  float seconds;
+  // The change in time in milliseconds.
+  float dt;
+  // A generational counter for how many ticks have been called.
+  uint32_t tick;
+  // The width of the window.
+  float width;
+  // The height of the window.
+  float height;
+  bool isMouseDown;
+};
+
 // Begin the utilities, which will only be defined in CPU-land.
 #ifndef __METAL_VERSION__
 #include "viz/debug.h"

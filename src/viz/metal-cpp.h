@@ -1,5 +1,8 @@
 #pragma once
 #include "mtlpp/mtlpp.hpp"
+#include "viz/assert.h"
+#include "viz/metal-objc.h"
+#include "viz/shader-utils.h"
 #include <optional>
 #include <vector>
 
@@ -121,12 +124,25 @@ struct RenderInitializer
 class AutoDraw
 {
 public:
-  AutoDraw(mtlpp::CommandQueue& aCommandQueue, Tick& aTick)
+  AutoDraw(mtlpp::Device& aDevice,
+           mtlpp::CommandQueue& aCommandQueue,
+           Tick& aTick)
     : mCommandQueue(aCommandQueue)
     , mTick(aTick)
-  {
-    mCommandBuffer = mCommandQueue.CommandBuffer();
-  }
+    , mTickUniforms(BufferViewStruct<VizTickUniforms>(
+        aDevice,
+        mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
+        VizTickUniforms{
+          .milliseconds = aTick.milliseconds,
+          .seconds = aTick.seconds,
+          .dt = aTick.dt,
+          .tick = aTick.tick,
+          .width = aTick.width,
+          .height = aTick.height,
+          .isMouseDown = aTick.isMouseDown,
+        }))
+    , mCommandBuffer(mCommandQueue.CommandBuffer())
+  {}
 
   ~AutoDraw()
   {
@@ -157,6 +173,8 @@ public:
   {
     this->Clear(mtlpp::ClearColor(red, green, blue, 1.0));
   }
+
+  BufferViewStruct<VizTickUniforms>& GetTickUniforms() { return mTickUniforms; }
 
   void Render(RenderInitializer&& initializer)
   {
@@ -226,6 +244,7 @@ public:
   }
 
   // Dependencies.
+  BufferViewStruct<VizTickUniforms> mTickUniforms;
   mtlpp::CommandQueue& mCommandQueue;
   Tick& mTick;
 

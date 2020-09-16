@@ -33,18 +33,18 @@ public:
   void Update();
 
   // The amount of time passed in milliseconds.
-  double milliseconds = 0;
-  double seconds = 0;
+  float milliseconds = 0;
+  float seconds = 0;
   // The change in time in milliseconds.
-  double dt = 16.666;
+  float dt = 16.666;
   // A generational counter for how many ticks have been called.
   uint32_t tick = 0;
   // The width of the window.
-  double width = 0;
+  float width = 0;
   // The height of the window.
-  double height = 0;
+  float height = 0;
 
-  std::optional<Vec2<double>> mouse = {};
+  std::optional<Vec2<float>> mouse = {};
   bool isMouseDown = false;
 
   bool hasRunOnce = false;
