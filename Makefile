@@ -27,20 +27,22 @@ INCLUDES := -Iincludes -Isrc
 
 CPP_SOURCES := $(shell FIND src/viz -type f -name *.cpp)
 OBJC_SOURCES := $(shell FIND src/viz -type f -name *.mm)
+METAL_SOURCES := $(shell FIND src -type f -name *.metal)
 DEPS_SOURCES := includes/mtlpp/mtlpp.mm
 
 CPP_CODE_OBJECTS := $(patsubst src/viz/%,build/%,$(CPP_SOURCES:.cpp=.cpp.o))
 OBJC_CODE_OBJECTS := $(patsubst src/viz/%,build/%,$(OBJC_SOURCES:.mm=.mm.o))
 DEPS_CODE_OBJECTS := $(patsubst includes/%,build/includes/%,$(DEPS_SOURCES:.mm=.o))
+METAL_AIR := $(patsubst src/%,build/%,$(METAL_SOURCES:.metal=.air))
 CODE_OBJECTS := $(CPP_CODE_OBJECTS) $(OBJC_CODE_OBJECTS) $(DEPS_CODE_OBJECTS)
 
 # Build C++ object files.
-build/%.cpp.o: src/viz/%.cpp
+build/%.cpp.o: src/viz/%.cpp src/viz/%.h
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(CPPFLAGS) $(LDFLAGS) $(INCLUDES) -c $< -o $@
 
 # Build Objective C object files.
-build/%.mm.o: src/viz/%.mm
+build/%.mm.o: src/viz/%.mm src/viz/%.h
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(OBJCFLAGS) $(INCLUDES) -c $< -o $@
 
@@ -52,18 +54,20 @@ build/includes/%.o: $(DEPS_SOURCES)
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(OBJCFLAGS) $(INCLUDES) -c $< -o $@
 
-bin/%: src/examples/%.cpp $(CODE_OBJECTS) bin src/examples/%.metal bin/%.metallib
+bin/%: src/examples/%.cpp $(CODE_OBJECTS) bin $(METAL_SOURCES) bin/%.metallib
 	$(CC) $(CPPFLAGS) $(LDFLAGS) $(INCLUDES) $(CODE_OBJECTS) -o $@ $<
 	@echo "✨ Done building ✨"
 	@echo ""
 
 # Compile the intermediate representation of metal files.
-build/%.air: src/examples/%.metal
+build/%.air: src/%.metal
+	mkdir -p $(shell dirname $@)
 	xcrun -sdk macosx metal $(INCLUDES) -c $< -o $@
 
 # Build the final metallib files.
-bin/%.metallib: build/%.air
-	xcrun -sdk macosx metallib $< -o $@
+bin/%.metallib: $(METAL_AIR)
+
+	xcrun -sdk macosx metallib build/examples/$(shell basename $@ .metallib).air $< -o $@
 
 # Install the dependency of mtlpp.
 includes/mtlpp: includes
