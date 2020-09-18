@@ -1,8 +1,7 @@
 #import "cocoa-app.h"
+#import "utils.h"
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
-#include <mach-o/dyld.h> //_NSGetExecutablePath
-#include <string>
 
 /**
  * The delegates handle various events and behavior that come from the
@@ -200,32 +199,6 @@ viz::Tick::Update()
   }
 
   hasRunOnce = true;
-}
-
-/**
- * Uses _NSGetExecutablePath, and then slices off the binary name from the path.
- *
- * https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
- */
-std::string
-getExecutableName()
-{
-  char path[PATH_MAX + 1];
-  uint32_t length = PATH_MAX;
-  int result = _NSGetExecutablePath(path, &length);
-  assert(result != -1);
-
-  auto string = std::string{ path };
-  size_t start = 0;
-  for (;;) {
-    auto index = string.find("/", start);
-    if (index == std::string::npos) {
-      break;
-    }
-    start = index + 1;
-  }
-
-  return string.substr(start);
 }
 
 void

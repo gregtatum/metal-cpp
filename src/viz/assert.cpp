@@ -10,6 +10,11 @@ ErrorMessage::ErrorMessage(const char* message)
 ErrorMessage::ErrorMessage(std::string&& message)
   : mMessage(message){};
 
+const char*
+ErrorMessage::what() const noexcept
+{
+  return mMessage.c_str();
+}
 /**
  * This function should be called from the `int main()` function. It will ensure
  * that the exceptions are caught, displayed, and properly unwound when thrown.
@@ -34,7 +39,7 @@ ReleaseAssert(bool assertion, const char* message = "Assertion failed")
   }
 }
 
-#ifdef NDEBUG
+#ifdef DEBUG
 
 void
 DebugAssert(bool assertion, const char* message = "Assertion failed")

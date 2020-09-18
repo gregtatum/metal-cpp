@@ -24,7 +24,7 @@ BigTriangle::BigTriangle(const char* label,
       mtlpp::ResourceOptions::CpuCacheModeWriteCombined))
   , mPipeline(viz::InitializeRenderPipeline({
       .device = device,
-      .label = "Big Triangle",
+      .label = "Big Triangle Pipeline",
       .vertexFunction = library.NewFunction("bigTriangleVert"),
       .fragmentFunction = library.NewFunction("bigTriangleFragExample"),
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
@@ -34,7 +34,7 @@ BigTriangle::BigTriangle(const char* label,
   , mDepth(InitializeDepthStencil({
       .device = device,
       .depthCompareFunction = mtlpp::CompareFunction::LessEqual,
-      .depthWriteEnabled = true,
+      .depthWriteEnabled = false,
     }))
   , mLabel(label)
 {}
@@ -53,7 +53,7 @@ BigTriangle::Draw(AutoDraw& draw)
     }),
     .fragmentBuffers = std::vector({ &draw.GetTickUniforms().buffer }),
     // General draw config
-    .cullMode = mtlpp::CullMode::Front,
+    .cullMode = mtlpp::CullMode::None,
     .depthStencilState = mDepth,
   });
 }

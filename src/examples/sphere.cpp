@@ -40,7 +40,8 @@ struct Scene
   Matrix4 projection = {};
 };
 
-size_t SMALL_SPHERE_COUNT = 75;
+// size_t SMALL_SPHERE_COUNT = 75;
+size_t SMALL_SPHERE_COUNT = 3;
 float SMALL_SPHERE_RADIUS_MIN = 0.02f;
 float SMALL_SPHERE_RADIUS_MAX = 0.15f;
 float BIG_SPHERE_RADIUS = 0.9f;
@@ -92,7 +93,7 @@ CreateScene(Device& device)
     .spherePropsUniforms = spherePropsUniforms,
     .smallSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
-      .label = "Small sphere",
+      .label = "Small Sphere Pipeline",
       .vertexFunction = library.NewFunction("smallSphereVert"),
       .fragmentFunction = library.NewFunction("smallSphereFrag"),
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
@@ -103,7 +104,7 @@ CreateScene(Device& device)
     .bigSphereUniforms = bigSphereUniforms,
     .bigSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
-      .label = "Big sphere",
+      .label = "Big Sphere Pipeline",
       .vertexFunction = library.NewFunction("bigSphereVert"),
       .fragmentFunction = library.NewFunction("bigSphereFrag"),
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
@@ -234,9 +235,9 @@ run()
     scene.projection = Matrix4::MakePerspective(
       M_PI * 0.3, tick.width / tick.height, 0.05, 100.0);
 
-    scene.bigTriangle.Draw(draw);
     DrawBigSphere(draw, tick, scene);
-    // DrawSmallSpheres(draw, tick, scene);
+    DrawSmallSpheres(draw, tick, scene);
+    scene.bigTriangle.Draw(draw);
   };
 
   InitApp(device, &tickFn);

@@ -10,7 +10,7 @@ class ErrorMessage : public std::exception
 public:
   explicit ErrorMessage(const char* message);
   explicit ErrorMessage(std::string&& message);
-  const char* what();
+  const char* what() const noexcept;
   const std::string mMessage;
 };
 

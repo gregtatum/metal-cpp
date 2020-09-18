@@ -498,5 +498,4 @@ public:
   bool mClear = false;
   std::optional<mtlpp::ClearColor> mClearColor;
 };
-
 } // viz

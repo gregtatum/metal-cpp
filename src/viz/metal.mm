@@ -1,13 +1,12 @@
 #include <Foundation/NSError.h>
+#include <Metal/MTLCaptureManager.h>
 #include <Metal/MTLDevice.h>
-#include <mach-o/dyld.h>   //_NSGetExecutablePath
-#include <sstream>         // std::ostringstream
-#include <string>          // std::string
-#include <sys/syslimits.h> // PATH_MAX
+#include <sstream> // std::ostringstream
 // Make sure including metal.h is last, otherwise there is ambiguous
 // resolution of some internal types.
 #include "viz/assert.h"
 #include "viz/metal.h"
+#include "viz/utils.h" // getExecutablePath
 
 namespace viz {
 
@@ -51,6 +50,35 @@ NicerNSError::what() const noexcept
   return mErrorMessage.c_str();
 }
 
+/**
+ * Objective C functions rely on passing in an error. This wrapper throws a nice
+ * error instead if the function fails.
+ */
+template<typename Fn>
+void
+throwIfError(Fn callback)
+{
+  NSError* nsError = nil;
+  callback(nsError);
+  NicerNSError error{ ns::Handle{ (__bridge void*)nsError } };
+  if (error) {
+    throw error;
+  }
+}
+
+template<typename Returns, typename Fn>
+Returns
+returnOrThrow(Fn callback)
+{
+  NSError* nsError = nil;
+  Returns value = callback(nsError);
+  NicerNSError error{ ns::Handle{ (__bridge void*)nsError } };
+  if (error) {
+    throw error;
+  }
+  return value;
+}
+
 std::pair<Library, NicerNSError>
 CreateLibraryFromSource(Device device,
                         const char* source,
@@ -80,22 +108,6 @@ CreateLibraryFromMetalLib(Device device, const char* metallib)
 
   return std::pair(ns::Handle{ (__bridge void*)library },
                    NicerNSError(ns::Handle{ (__bridge void*)error }));
-}
-
-/**
- * This is a macOS-specific way to get the executable path.
- *
- * https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
- */
-std::string
-getExecutablePath()
-{
-  char path[PATH_MAX + 1];
-  uint32_t length = PATH_MAX;
-  int result = _NSGetExecutablePath(path, &length);
-  assert(result != -1);
-
-  return std::string{ path };
 }
 
 mtlpp::Library
@@ -155,6 +167,36 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
   return initializer.device.NewRenderPipelineState(descriptor, nullptr);
 }
 
+void
+captureMetalTrace(mtlpp::Device& device)
+{
+
+  auto bundle = [NSBundle mainBundle];
+
+  NSLog(@"bundle executablePath: %@", [bundle executablePath]);
+  NSLog(@"bundle bundleURL: %@", [bundle bundleURL]);
+  NSLog(@"bundle bundlePath: %@", [bundle bundlePath]);
+  NSLog(@"bundle bundleIdentifier: %@", [bundle bundleIdentifier]);
+  NSLog(@"bundle infoDictionary: %@", [bundle infoDictionary]);
+
+  MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+
+  ReleaseAssert(
+    [captureManager supportsDestination:MTLCaptureDestinationGPUTraceDocument],
+    "Capture to a GPU trace file is not supported");
+
+  MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
+  captureDescriptor.captureObject = (__bridge id<MTLDevice>)device.GetPtr();
+  captureDescriptor.destination = MTLCaptureDestinationGPUTraceDocument;
+  auto output = getExecutablePath() + ".gputrace";
+  NSString* nsOutput = [NSString stringWithUTF8String:output.c_str()];
+  captureDescriptor.outputURL = [NSURL fileURLWithPath:nsOutput];
+
+  throwIfError([&](NSError*& error) {
+    [captureManager startCaptureWithDescriptor:captureDescriptor error:&error];
+  });
+}
+
 AutoDraw::AutoDraw(mtlpp::Device& aDevice,
                    mtlpp::CommandQueue& aCommandQueue,
                    Tick& aTick)
@@ -172,13 +214,25 @@ AutoDraw::AutoDraw(mtlpp::Device& aDevice,
         .height = aTick.height,
         .isMouseDown = aTick.isMouseDown,
       }))
-  , mCommandBuffer(mCommandQueue.CommandBuffer())
-{}
+{
+  if (mTick.tick == 0) {
+    NSLog(@"Before capturing");
+    captureMetalTrace(aDevice);
+  }
+  mCommandBuffer = mCommandQueue.CommandBuffer();
+}
 
 AutoDraw::~AutoDraw()
 {
   mCommandBuffer.Present(mTick.drawable);
   mCommandBuffer.Commit();
+  if (mTick.tick == 0) {
+    MTLCaptureManager* captureManager =
+      [MTLCaptureManager sharedCaptureManager];
+    [captureManager stopCapture];
+    NSLog(@"Done capturing");
+  }
+
   mCommandBuffer.WaitUntilCompleted();
 }
 

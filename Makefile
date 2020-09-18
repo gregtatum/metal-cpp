@@ -1,12 +1,20 @@
 CC := clang++
 
 # This mac version has std::optional::value()
-MIN_MAC_VER := 10.14
-CPPFLAGS := \
+MIN_MAC_VER := 10.15
+METAL_FLAGS :=
+CPP_FLAGS := \
 	-std=c++2a \
 	-mmacosx-version-min=$(MIN_MAC_VER) -g \
 	-Wno-unused-command-line-argument \
 	# TODO: -Wall -Werror
+
+ifdef RELEASE
+CPP_FLAGS += -NDEBUG
+else
+CPP_FLAGS += -DDEBUG
+METAL_FLAGS += -gline-tables-only -MO
+endif
 
 OBJCFLAGS := \
 	-std=c++2a \
@@ -39,7 +47,7 @@ CODE_OBJECTS := $(CPP_CODE_OBJECTS) $(OBJC_CODE_OBJECTS) $(DEPS_CODE_OBJECTS)
 # Build C++ object files.
 build/%.cpp.o: src/viz/%.cpp src/viz/%.h
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
-	$(CC) $(CPPFLAGS) $(LDFLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) $(CPP_FLAGS) $(LDFLAGS) $(INCLUDES) -c $< -o $@
 
 # Build Objective C object files.
 build/%.mm.o: src/viz/%.mm src/viz/%.h
@@ -54,15 +62,15 @@ build/includes/%.o: $(DEPS_SOURCES)
 	@mkdir -p $(shell echo $@ | sed -e 's/\/[^\/]*\.o//g')
 	$(CC) $(OBJCFLAGS) $(INCLUDES) -c $< -o $@
 
-bin/%: src/examples/%.cpp $(CODE_OBJECTS) bin $(METAL_SOURCES) bin/%.metallib
-	$(CC) $(CPPFLAGS) $(LDFLAGS) $(INCLUDES) $(CODE_OBJECTS) -o $@ $<
+bin/%: src/examples/%.cpp $(CODE_OBJECTS) $(METAL_SOURCES) bin bin/Info.plist bin/%.metallib
+	$(CC) $(CPP_FLAGS) $(LDFLAGS) $(INCLUDES) $(CODE_OBJECTS) -o $@ $<
 	@echo "✨ Done building ✨"
 	@echo ""
 
 # Compile the intermediate representation of metal files.
 build/%.air: src/%.metal
 	mkdir -p $(shell dirname $@)
-	xcrun -sdk macosx metal $(INCLUDES) -c $< -o $@
+	xcrun -sdk macosx metal $(INCLUDES) $(METAL_FLAGS) -c $< -o $@
 
 # Build the final metallib files.
 bin/%.metallib: $(METAL_AIR)
@@ -78,6 +86,10 @@ includes/mtlpp: includes
 # Ensure the bin dir is created if needed.
 bin:
 	mkdir -p ./bin
+
+# Ensure the bin dir is created if needed.
+bin/Info.plist: bin
+	cp src/Info.plist bin/Info.plist
 
 # Ensure the includes dir is created if needed.
 includes:
