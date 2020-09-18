@@ -1,12 +1,15 @@
 #include <Foundation/NSError.h>
 #include <Metal/MTLCaptureManager.h>
 #include <Metal/MTLDevice.h>
+#include <iostream>
 #include <sstream> // std::ostringstream
+#include <string>
 // Make sure including metal.h is last, otherwise there is ambiguous
 // resolution of some internal types.
 #include "viz/assert.h"
 #include "viz/metal.h"
 #include "viz/utils.h" // getExecutablePath
+#include <sys/select.h>
 
 namespace viz {
 
@@ -168,33 +171,37 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
 }
 
 void
-captureMetalTrace(mtlpp::Device& device)
+startMetalTrace(mtlpp::Device& device)
 {
-
-  auto bundle = [NSBundle mainBundle];
-
-  NSLog(@"bundle executablePath: %@", [bundle executablePath]);
-  NSLog(@"bundle bundleURL: %@", [bundle bundleURL]);
-  NSLog(@"bundle bundlePath: %@", [bundle bundlePath]);
-  NSLog(@"bundle bundleIdentifier: %@", [bundle bundleIdentifier]);
-  NSLog(@"bundle infoDictionary: %@", [bundle infoDictionary]);
-
   MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
 
   ReleaseAssert(
     [captureManager supportsDestination:MTLCaptureDestinationGPUTraceDocument],
-    "Capture to a GPU trace file is not supported");
+    "Capture to a GPU trace file is not supported. Does the Info.plist have "
+    "MetalCaptureEnabled set to true?");
 
+  // Place the trace right next to the binary file.
+  auto output = getExecutablePath() + ".gputrace";
+  NSString* nsOutput = [NSString stringWithUTF8String:output.c_str()];
+
+  // Create the descriptor to describe how we are doing this capture.
   MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
   captureDescriptor.captureObject = (__bridge id<MTLDevice>)device.GetPtr();
   captureDescriptor.destination = MTLCaptureDestinationGPUTraceDocument;
-  auto output = getExecutablePath() + ".gputrace";
-  NSString* nsOutput = [NSString stringWithUTF8String:output.c_str()];
   captureDescriptor.outputURL = [NSURL fileURLWithPath:nsOutput];
 
   throwIfError([&](NSError*& error) {
     [captureManager startCaptureWithDescriptor:captureDescriptor error:&error];
   });
+}
+
+void
+saveMetalTraceToDisk()
+{
+  MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+  [captureManager stopCapture];
+  std::cout << "GPU trace completed: " << getExecutablePath() + ".gputrace"
+            << std::endl;
 }
 
 AutoDraw::AutoDraw(mtlpp::Device& aDevice,
@@ -215,9 +222,15 @@ AutoDraw::AutoDraw(mtlpp::Device& aDevice,
         .isMouseDown = aTick.isMouseDown,
       }))
 {
-  if (mTick.tick == 0) {
-    NSLog(@"Before capturing");
-    captureMetalTrace(aDevice);
+  if (mTick.traceFrames > 0) {
+    mTick.traceFramesUntilTick =
+      // Subtract one, as this this current tick already counts to
+      // the total frames.
+      mTick.tick + mTick.traceFrames - 1;
+    std::cout << "Starting to trace " << mTick.traceFrames << " frames.\n";
+    mTick.traceFrames.store(0);
+
+    startMetalTrace(aDevice);
   }
   mCommandBuffer = mCommandQueue.CommandBuffer();
 }
@@ -226,11 +239,8 @@ AutoDraw::~AutoDraw()
 {
   mCommandBuffer.Present(mTick.drawable);
   mCommandBuffer.Commit();
-  if (mTick.tick == 0) {
-    MTLCaptureManager* captureManager =
-      [MTLCaptureManager sharedCaptureManager];
-    [captureManager stopCapture];
-    NSLog(@"Done capturing");
+  if (mTick.traceFramesUntilTick == mTick.tick) {
+    saveMetalTraceToDisk();
   }
 
   mCommandBuffer.WaitUntilCompleted();
@@ -314,7 +324,7 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
 
   for (size_t i = 0; i < fragmentBuffers.size(); i++) {
     auto& buffer = fragmentBuffers[i];
-    ReleaseAssert(buffer, "VertexBuffer must exist.");
+    ReleaseAssert(buffer, "FragmentBuffers must exist.");
     renderCommandEncoder.SetFragmentBuffer(*buffer, 0, i);
   }
 
@@ -327,7 +337,8 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
     renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
   }
 
-  if (mTick.tick == 0) {
+  // Disable debug printing now that GPU tracing is available:
+  if (false && mTick.tick == 0) {
     // clang-format off
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << label << std::endl;

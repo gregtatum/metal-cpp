@@ -107,10 +107,27 @@ function listenToKeyboard() {
         runExample();
         keepExampleClosed = false;
         break;
+      case "k":
+        closeSubprocess();
+        printShortcuts();
+        keepExampleClosed = true;
+        break;
       case "q":
       case "\u0003":
         closeSubprocess();
         process.exit();
+      case "0":
+      case "1":
+      case "2":
+      case "3":
+      case "4":
+      case "5":
+      case "6":
+      case "7":
+      case "8":
+      case "9": {
+        exampleSubProcess.stdin.write(key + "\n");
+      }
     }
   });
   printShortcuts();
@@ -124,7 +141,9 @@ function printShortcuts() {
   console.log("  c - Clean the C++ files");
   console.log("  a - Clean all the files");
   console.log("  r - Restart the example");
+  console.log("  k - Kill process");
   console.log("  q - Quit");
+  console.log("  1-9 - Do a GPU trace of a certain length");
   console.log("");
 }
 
@@ -139,9 +158,18 @@ function runExample() {
   exampleSubProcess = spawn(`./bin/${example}`, args, {
     cwd: rootPath,
     detached: true,
-    stdio: "inherit",
+    stdio: [
+      // stdin
+      "pipe",
+      // stdout
+      "inherit",
+      // stderr
+      "inherit",
+    ],
     env: metalValidation,
   });
+
+  exampleSubProcess.stdin.setEncoding("utf-8");
 
   exampleSubProcess.on("close", (code, signal) => {
     if (isClosingSubProcess) {
@@ -216,6 +244,30 @@ function watchFiles() {
     });
   }
   console.log("👀 Watching the tree");
+}
+
+function watchForGpuTraceFiles() {
+  const dir = path.join(__dirname, "../bin");
+  const options = { interval: 0.5 };
+
+  fs.watch(dir, (eventType, filename) => {
+    console.log({ eventType, filename });
+  });
+
+  // Interval is in seconds.
+  watch.watchTree(dir, options, (...args) => {
+    if (!args[1]) {
+      const [allStats] = args;
+      // This is the first run, do nothing.
+    } else {
+      const [fileName, prevStat, currState] = args;
+      console.log({ fileName });
+      if (fileName.endsWith(".gputrace")) {
+        console.log("gputrace discovered, opening it" + fileName);
+        // execSync("open + " + fileName);
+      }
+    }
+  });
 }
 
 function getExample() {

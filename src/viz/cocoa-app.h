@@ -38,7 +38,13 @@ public:
   // The change in time in milliseconds.
   float dt = 16.666;
   // A generational counter for how many ticks have been called.
-  uint32_t tick = 0;
+  std::atomic_uint32_t tick = 0;
+  // std::cin can signal to the process to trace some frames by sending a
+  // number.
+  std::atomic_uint32_t traceFrames = 0;
+  // This is mutated by the AutoDraw mechanism to control tracing.
+  int32_t traceFramesUntilTick = -1;
+
   // The width of the window.
   float width = 0;
   // The height of the window.

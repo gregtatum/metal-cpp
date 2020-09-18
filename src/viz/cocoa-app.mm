@@ -2,6 +2,8 @@
 #import "utils.h"
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
+#import <iostream>
+#import <thread>
 
 /**
  * The delegates handle various events and behavior that come from the
@@ -201,8 +203,38 @@ viz::Tick::Update()
   hasRunOnce = true;
 }
 
+namespace viz {
+
 void
-viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
+listenForStdIn(Tick& tick)
+{
+  for (std::string line; std::getline(std::cin, line);) {
+    if (line == "1") {
+      tick.traceFrames.store(1);
+    } else if (line == "2") {
+      tick.traceFrames.store(2);
+    } else if (line == "3") {
+      tick.traceFrames.store(3);
+    } else if (line == "4") {
+      tick.traceFrames.store(4);
+    } else if (line == "5") {
+      tick.traceFrames.store(5);
+    } else if (line == "6") {
+      tick.traceFrames.store(10);
+    } else if (line == "7") {
+      tick.traceFrames.store(25);
+    } else if (line == "8") {
+      tick.traceFrames.store(30);
+    } else if (line == "9") {
+      tick.traceFrames.store(50);
+    } else if (line == "0") {
+      tick.traceFrames.store(100);
+    }
+  }
+}
+
+void
+InitApp(const mtlpp::Device& device, TickFn* tickFn)
 {
   // The NSApplication is an object that manages an app’s main event loop and
   // resources used by all of that app’s objects.
@@ -236,8 +268,10 @@ viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
 
   // The tick is an object that is re-used on every frame draw call that
   // contains the current tick information.
-  viz::Tick tick{ frame.size.width * window.backingScaleFactor,
-                  frame.size.height * window.backingScaleFactor };
+  Tick tick{ frame.size.width * window.backingScaleFactor,
+             frame.size.height * window.backingScaleFactor };
+
+  std::thread stdinThread{ listenForStdIn, std::ref(tick) };
 
   // The delegate handles events related to the window.
   WindowDelegate* windowDelegate = [WindowDelegate new];
@@ -274,3 +308,5 @@ viz::InitApp(const mtlpp::Device& device, viz::TickFn* tickFn)
 
   [app run];
 }
+
+} // namespace viz
