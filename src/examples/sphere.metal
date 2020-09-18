@@ -80,3 +80,11 @@ bigSphereFrag(Varying varying [[stage_in]],
   auto color = half3(0.0, brightness, 0.0) * (weirdFrequency + frequency);
   return half4(color, 1.0);
 }
+
+fragment half4
+background(BigTriangleVarying varying [[stage_in]],
+           constant VizTickUniforms& tick [[buffer(0)]])
+{
+  float brightness = max(0.0, 1.0 - length(varying.coordinate));
+  return half4(0.0, brightness, 0.0, 1.0);
+}

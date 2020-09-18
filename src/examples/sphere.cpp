@@ -30,7 +30,7 @@ struct Scene
   BufferViewStruct<ModelUniforms> bigSphereUniforms;
   mtlpp::RenderPipelineState bigSpherePipeline;
 
-  BigTriangle bigTriangle;
+  BigTriangle background;
 
   uint32_t cellsSize;
   mtlpp::DepthStencilState writeDepth;
@@ -40,8 +40,7 @@ struct Scene
   Matrix4 projection = {};
 };
 
-// size_t SMALL_SPHERE_COUNT = 75;
-size_t SMALL_SPHERE_COUNT = 3;
+size_t SMALL_SPHERE_COUNT = 75;
 float SMALL_SPHERE_RADIUS_MIN = 0.02f;
 float SMALL_SPHERE_RADIUS_MAX = 0.15f;
 float BIG_SPHERE_RADIUS = 0.9f;
@@ -112,10 +111,9 @@ CreateScene(Device& device)
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
     }),
 
-    .bigTriangle = BigTriangle{ "Sphere Background",
-                                device,
-                                library,
-                                library.NewFunction("bigTriangleFragExample") },
+    .background =
+      BigTriangle{
+        "Background", device, library, library.NewFunction("background") },
 
     .cellsSize = static_cast<uint32_t>(mesh.cells.size() * 3),
     .writeDepth = InitializeDepthStencil({
@@ -237,7 +235,7 @@ run()
 
     DrawBigSphere(draw, tick, scene);
     DrawSmallSpheres(draw, tick, scene);
-    scene.bigTriangle.Draw(draw);
+    scene.background.Draw(draw);
   };
 
   InitApp(device, &tickFn);

@@ -11,6 +11,11 @@
 #include "viz/utils.h" // getExecutablePath
 #include <sys/select.h>
 
+// Create some macros for easier to read bridging.
+#define OBJC(_type, _value) (__bridge _type) _value.GetPtr()
+#define CPP(_type, _value)                                                     \
+  static_cast<_type>(ns::Handle{ (__bridge void*)_value })
+
 namespace viz {
 
 NicerNSError::operator bool() const
@@ -23,7 +28,7 @@ NicerNSError::what() const noexcept
 {
   if (mErrorMessage.size() == 0) {
     std::ostringstream stream;
-    auto error = (__bridge NSError*)mError.GetPtr();
+    auto error = OBJC(NSError*, mError);
     if (error == nil) {
       // There is no error.
       return "No NSError is associated with this error.";
@@ -63,7 +68,7 @@ throwIfError(Fn callback)
 {
   NSError* nsError = nil;
   callback(nsError);
-  NicerNSError error{ ns::Handle{ (__bridge void*)nsError } };
+  NicerNSError error{ CPP(ns::Error, nsError) };
   if (error) {
     throw error;
   }
@@ -75,7 +80,7 @@ returnOrThrow(Fn callback)
 {
   NSError* nsError = nil;
   Returns value = callback(nsError);
-  NicerNSError error{ ns::Handle{ (__bridge void*)nsError } };
+  NicerNSError error{ CPP(ns::Error, nsError) };
   if (error) {
     throw error;
   }
@@ -87,50 +92,54 @@ CreateLibraryFromSource(Device device,
                         const char* source,
                         const CompileOptions& options)
 {
-  // Error
   NSError* error = nil;
 
-  id<MTLLibrary> library = [(__bridge id<MTLDevice>)device.GetPtr()
-    newLibraryWithSource:[NSString stringWithUTF8String:source]
-                 options:(__bridge MTLCompileOptions*)options.GetPtr()
-                   error:&error];
+  auto mtlDevice = OBJC(id<MTLDevice>, device);
+  auto mtlOptions = OBJC(MTLCompileOptions*, options);
 
-  return std::pair(ns::Handle{ (__bridge void*)library },
-                   NicerNSError(ns::Handle{ (__bridge void*)error }));
+  id<MTLLibrary> library =
+    [mtlDevice newLibraryWithSource:[NSString stringWithUTF8String:source]
+                            options:mtlOptions
+                              error:&error];
+
+  return std::pair(CPP(mtlpp::Library, library),
+                   NicerNSError(CPP(ns::Error, error)));
 };
 
 std::pair<mtlpp::Library, NicerNSError>
 CreateLibraryFromMetalLib(Device device, const char* metallib)
 {
-  // Error
   NSError* error = nil;
 
-  id<MTLLibrary> library = [(__bridge id<MTLDevice>)device.GetPtr()
-    newLibraryWithFile:[NSString stringWithUTF8String:metallib]
-                 error:&error];
+  auto mtlDevice = OBJC(id<MTLDevice>, device);
 
-  return std::pair(ns::Handle{ (__bridge void*)library },
-                   NicerNSError(ns::Handle{ (__bridge void*)error }));
+  id<MTLLibrary> library =
+    [mtlDevice newLibraryWithFile:[NSString stringWithUTF8String:metallib]
+                            error:&error];
+
+  return std::pair(CPP(mtlpp::Library, library),
+                   NicerNSError(CPP(ns::Error, error)));
 }
 
 mtlpp::Library
 CreateLibraryForExample(Device device)
 {
-  // Error
   NSError* nsError = nil;
 
   auto path = getExecutablePath() + ".metallib";
 
-  id<MTLLibrary> library = [(__bridge id<MTLDevice>)device.GetPtr()
-    newLibraryWithFile:[NSString stringWithUTF8String:path.c_str()]
-                 error:&nsError];
+  auto mtlDevice = OBJC(id<MTLDevice>, device);
 
-  auto error = NicerNSError(ns::Handle{ (__bridge void*)nsError });
+  id<MTLLibrary> library =
+    [mtlDevice newLibraryWithFile:[NSString stringWithUTF8String:path.c_str()]
+                            error:&nsError];
+
+  auto error = NicerNSError(CPP(ns::Error, nsError));
   if (error) {
     throw error;
   }
 
-  return ns::Handle{ (__bridge void*)library };
+  return CPP(mtlpp::Library, library);
 }
 
 mtlpp::DepthStencilState
@@ -167,7 +176,14 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
       initializer.colorAttachmentPixelFormats[i]);
   }
 
-  return initializer.device.NewRenderPipelineState(descriptor, nullptr);
+  return returnOrThrow<mtlpp::RenderPipelineState>([&](NSError*& error) {
+    auto mtlDevice = OBJC(id<MTLDevice>, initializer.device);
+    auto mtlDescriptor = OBJC(MTLRenderPipelineDescriptor*, descriptor);
+    auto renderPipelineState =
+      [mtlDevice newRenderPipelineStateWithDescriptor:mtlDescriptor
+                                                error:&error];
+    return CPP(mtlpp::RenderPipelineState, renderPipelineState);
+  });
 }
 
 void
@@ -186,7 +202,7 @@ startMetalTrace(mtlpp::Device& device)
 
   // Create the descriptor to describe how we are doing this capture.
   MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
-  captureDescriptor.captureObject = (__bridge id<MTLDevice>)device.GetPtr();
+  captureDescriptor.captureObject = OBJC(id<MTLDevice>, device);
   captureDescriptor.destination = MTLCaptureDestinationGPUTraceDocument;
   captureDescriptor.outputURL = [NSURL fileURLWithPath:nsOutput];
 
@@ -430,7 +446,8 @@ AutoDraw::Draw(DrawInitializer&& initializer)
     renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
   }
 
-  if (mTick.tick == 0) {
+  // Disable for now
+  if (false && mTick.tick == 0) {
     // clang-format off
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << label << std::endl;
@@ -454,3 +471,6 @@ AutoDraw::Draw(DrawInitializer&& initializer)
 }
 
 } // namespace viz
+
+#undef CPP
+#undef OBJC

@@ -179,6 +179,7 @@ function runExample() {
       exampleSubProcess = null;
       isClosingSubProcess = false;
     } else {
+      console.log();
       console.log('Example closed, hit "r" to re-launch it.');
       exampleSubProcess = null;
       isClosingSubProcess = false;

@@ -5,7 +5,23 @@
 
 struct BigTriangleVarying
 {
+  // 0 to 1 going from bottom right corner to the top left.
+  // ^
+  // |
+  // .-->
   float2 uv;
+  // Centered around 0, and transformed by the screen size.
+  //
+  // actual screen size
+  // v
+  //  ------ ----------- --------
+  // |       |    ^    |         |
+  // |       | <--•--> |         |
+  // |       |    v    |         |
+  //  ------ ----------- --------
+  //         ^
+  //         Coordinate space
+  float2 coordinate;
   float4 position [[position]];
 };
 
