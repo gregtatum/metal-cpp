@@ -18,9 +18,9 @@ using namespace viz;
 
 struct Scene
 {
-  BufferViewList<Vector3> positions;
-  BufferViewList<std::array<uint32_t, 3>> cells;
-  BufferViewList<Vector3> normals;
+  MeshBuffers bigSphereBuffers;
+  MeshBuffers smallSphereBuffers;
+
   BufferViewStruct<SceneUniforms> sceneUniforms;
 
   BufferViewList<ModelUniforms> smallSphereUniforms;
@@ -31,7 +31,6 @@ struct Scene
 
   BigTriangle background;
 
-  uint32_t cellsSize;
   mtlpp::DepthStencilState writeDepth;
   mtlpp::DepthStencilState ignoreDepth;
   // Shared POD:
@@ -51,7 +50,9 @@ float SPHERE_ROTATE_Y = 0.03f;
 Scene
 CreateScene(Device& device)
 {
-  auto mesh = viz::generateIcosphere({ .subdivisions = 3, .radius = 1.0f });
+  auto bigMesh = viz::generateIcosphere({ .subdivisions = 3, .radius = 1.0f });
+  auto littleMesh =
+    viz::generateIcosphere({ .subdivisions = 2, .radius = 1.0f });
   auto cpuWrite = mtlpp::ResourceOptions::CpuCacheModeWriteCombined;
   auto library = CreateLibraryForExample(device);
 
@@ -69,10 +70,9 @@ CreateScene(Device& device)
   bigSphereUniforms.data->radius = BIG_SPHERE_RADIUS;
 
   return Scene{
-    .positions = BufferViewList<Vector3>(device, cpuWrite, mesh.positions),
-    .cells =
-      BufferViewList<std::array<uint32_t, 3>>(device, cpuWrite, mesh.cells),
-    .normals = BufferViewList<Vector3>(device, cpuWrite, mesh.normals),
+    .bigSphereBuffers = MeshBuffers{ device, bigMesh, cpuWrite },
+    .smallSphereBuffers = MeshBuffers{ device, littleMesh, cpuWrite },
+
     .sceneUniforms = BufferViewStruct<SceneUniforms>(device, cpuWrite),
 
     .smallSphereUniforms = BufferViewList<ModelUniforms>(
@@ -102,7 +102,6 @@ CreateScene(Device& device)
       BigTriangle{
         "Background", device, library, library.NewFunction("background") },
 
-    .cellsSize = static_cast<uint32_t>(mesh.cells.size() * 3),
     .writeDepth = InitializeDepthStencil({
       .device = device,
       .depthCompareFunction = mtlpp::CompareFunction::LessEqual,
@@ -135,12 +134,12 @@ DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
     .label = "DrawSmallSpheres",
     .renderPipelineState = scene.smallSpherePipeline,
     .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-    .drawIndexCount = scene.cellsSize,
+    .drawIndexCount = scene.smallSphereBuffers.indexCount,
     .drawIndexType = mtlpp::IndexType::UInt32,
-    .drawIndexBuffer = scene.cells.buffer,
+    .drawIndexBuffer = scene.smallSphereBuffers.cells.buffer,
     .vertexBuffers = std::vector({
-      &scene.positions.buffer,
-      &scene.normals.buffer,
+      &scene.smallSphereBuffers.positions.buffer,
+      &scene.smallSphereBuffers.normals.buffer,
       &scene.smallSphereUniforms.buffer,
     }),
     .fragmentBuffers = std::vector({ &scene.smallSphereUniforms.buffer }),
@@ -167,12 +166,12 @@ DrawBigSphere(AutoDraw& draw, Tick& tick, Scene& scene)
     .label = "DrawBigSphere",
     .renderPipelineState = scene.bigSpherePipeline,
     .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-    .drawIndexCount = scene.cellsSize,
+    .drawIndexCount = scene.bigSphereBuffers.indexCount,
     .drawIndexType = mtlpp::IndexType::UInt32,
-    .drawIndexBuffer = scene.cells.buffer,
+    .drawIndexBuffer = scene.bigSphereBuffers.cells.buffer,
     .vertexBuffers = std::vector({
-      &scene.positions.buffer,
-      &scene.normals.buffer,
+      &scene.bigSphereBuffers.positions.buffer,
+      &scene.bigSphereBuffers.normals.buffer,
       &scene.sceneUniforms.buffer,
       &scene.bigSphereUniforms.buffer,
     }),
