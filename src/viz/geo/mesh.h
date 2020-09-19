@@ -11,6 +11,9 @@ using Positions = std::vector<viz::Vector3>;
 using Normals = std::vector<viz::Vector3>;
 using UVs = std::vector<viz::Vector2>;
 
+/**
+ * A mesh represents a simplicial complex, that can be used to draw geometry.
+ */
 struct Mesh
 {
   Positions positions = {};
@@ -19,6 +22,9 @@ struct Mesh
   Cells cells = {};
 };
 
+/**
+ * Use macros to generate the Debug<Mesh>() definition.
+ */
 VIZ_DEBUG_OBJ(mesh, Mesh, {
   VIZ_DEBUG_OBJ_HEADER(Mesh, mesh, tabDepth);
   VIZ_DEBUG_OBJ_PROP(mesh, tabDepth, positions, Positions);

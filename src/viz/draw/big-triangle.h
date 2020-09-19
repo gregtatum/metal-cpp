@@ -30,6 +30,11 @@ struct BigTriangleVarying
 
 namespace viz {
 
+/**
+ * Draw one triangle that is bigger that covers the entire XY clip space and is
+ * located at Z=1. This is an efficient way to draw to every pixel on the
+ * screen. It does not affect the depth buffer.
+ */
 class BigTriangle
 {
 public:
