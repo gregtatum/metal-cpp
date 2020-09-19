@@ -3,6 +3,7 @@
 using namespace metal;
 #include "./sphere.h"
 #include "viz/draw/big-triangle.h"
+#include "viz/shaders/noise.h"
 
 vertex Varying
 smallSphereVert(const device packed_float3* vertexArray [[buffer(0)]],
@@ -85,6 +86,17 @@ fragment half4
 background(BigTriangleVarying varying [[stage_in]],
            constant VizTickUniforms& tick [[buffer(0)]])
 {
-  float brightness = max(0.0, 1.0 - length(varying.coordinate));
-  return half4(0.0, brightness, 0.0, 1.0);
+  float l = length(varying.coordinate);
+  float brightness = max(0.0, 1.3 - pow(l, 0.5));
+
+  half n1 =
+    noise::simplex(float3(varying.coordinate * 2.0, tick.seconds * 0.1));
+  half n2 = noise::simplex(
+    float3(varying.coordinate * 2.2 + 100.0 + n1, tick.seconds * 0.3));
+  half n3 = noise::simplex(
+    float3(varying.coordinate * 20.0 + 200.0 - n2 * 0.1, tick.seconds * 0.5));
+
+  brightness *= 0.5 + (0.5 * 0.3333) * (n1 + n2 + n3);
+
+  return half4(0.0, brightness, brightness * 0.4, 1.0);
 }
