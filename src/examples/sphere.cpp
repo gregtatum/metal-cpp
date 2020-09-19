@@ -23,8 +23,7 @@ struct Scene
   BufferViewList<Vector3> normals;
   BufferViewStruct<SceneUniforms> sceneUniforms;
 
-  std::vector<BufferViewStruct<ModelUniforms>> smallSphereUniforms;
-  std::vector<BufferViewStruct<SpherePropsUniforms>> spherePropsUniforms;
+  BufferViewList<ModelUniforms> smallSphereUniforms;
   mtlpp::RenderPipelineState smallSpherePipeline;
 
   BufferViewStruct<ModelUniforms> bigSphereUniforms;
@@ -41,8 +40,10 @@ struct Scene
 };
 
 size_t SMALL_SPHERE_COUNT = 75;
-float SMALL_SPHERE_RADIUS_MIN = 0.02f;
 float SMALL_SPHERE_RADIUS_MAX = 0.15f;
+float SMALL_SPHERE_RADIUS_MIN = 0.02f;
+float SMALL_SPHERE_BRIGHTNESS_MIN = 0.7f;
+float SMALL_SPHERE_BRIGHTNESS_MAX = 0.8f;
 float BIG_SPHERE_RADIUS = 0.9f;
 float SPHERE_ROTATE_X = -0.01f;
 float SPHERE_ROTATE_Y = 0.03f;
@@ -55,26 +56,12 @@ CreateScene(Device& device)
   auto library = CreateLibraryForExample(device);
 
   // Initialize the small spheres.
-  std::vector<BufferViewStruct<ModelUniforms>> smallSphereUniforms{};
-  for (size_t i = 0; i < SMALL_SPHERE_COUNT; i++) {
-    auto smallSphere = BufferViewStruct<ModelUniforms>(device, cpuWrite);
-    smallSphere.data->position =
-      RandomSpherical({ .radius = BIG_SPHERE_RADIUS });
-    smallSphere.data->radius =
-      RandomPow(SMALL_SPHERE_RADIUS_MIN, SMALL_SPHERE_RADIUS_MAX, 3);
-    smallSphereUniforms.push_back(smallSphere);
-  }
-
-  std::vector<BufferViewStruct<SpherePropsUniforms>> spherePropsUniforms{};
-  for (size_t i = 0; i < 2; i++) {
-    spherePropsUniforms.push_back(BufferViewStruct<SpherePropsUniforms>(
-      device,
-      cpuWrite,
-      {
-        .brightness = i == 0 ? 0.4f : 0.8f,
-        .scale = i == 0 ? 1.0f : 0.9f,
-      }));
-  }
+  auto initializeSmallSpheres = [&](size_t i) -> ModelUniforms {
+    return {
+      .position = RandomSpherical({ .radius = BIG_SPHERE_RADIUS }),
+      .radius = RandomPow(SMALL_SPHERE_RADIUS_MIN, SMALL_SPHERE_RADIUS_MAX, 3),
+    };
+  };
 
   // Initialize the big sphere.
   auto bigSphereUniforms = BufferViewStruct<ModelUniforms>(device, cpuWrite);
@@ -88,8 +75,8 @@ CreateScene(Device& device)
     .normals = BufferViewList<Vector3>(device, cpuWrite, mesh.normals),
     .sceneUniforms = BufferViewStruct<SceneUniforms>(device, cpuWrite),
 
-    .smallSphereUniforms = smallSphereUniforms,
-    .spherePropsUniforms = spherePropsUniforms,
+    .smallSphereUniforms = BufferViewList<ModelUniforms>(
+      device, cpuWrite, SMALL_SPHERE_COUNT, initializeSmallSpheres),
     .smallSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
       .label = "Small Sphere Pipeline",
@@ -132,46 +119,37 @@ CreateScene(Device& device)
 void
 DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
 {
-  for (size_t i = 0; i < 2; i++) {
-    auto& spherePropsUniforms = scene.spherePropsUniforms[i];
-    if (i == 0) {
-      spherePropsUniforms.data->scale =
-        std::lerp(0.98, 1.0, sin(tick.seconds * 30.0) * 0.5 + 0.5);
-    }
+  for (auto& uniforms : scene.smallSphereUniforms.data) {
 
-    for (auto& smallSphereUniforms : scene.smallSphereUniforms) {
-      auto& uniforms = smallSphereUniforms.data;
+    auto model = Matrix4::MakeYRotation(tick.seconds * SPHERE_ROTATE_Y) *
+                 Matrix4::MakeXRotation(tick.seconds * SPHERE_ROTATE_X) *
+                 Matrix4::MakeTranslation(uniforms.position) *
+                 Matrix4::MakeScale(uniforms.radius);
 
-      auto model = Matrix4::MakeYRotation(tick.seconds * SPHERE_ROTATE_Y) *
-                   Matrix4::MakeXRotation(tick.seconds * SPHERE_ROTATE_X) *
-                   Matrix4::MakeTranslation(uniforms->position) *
-                   Matrix4::MakeScale(uniforms->radius);
-
-      uniforms->matrices =
-        GetModelMatrices(model, scene.view, scene.projection);
-
-      draw.DrawIndexed({
-        .label = "DrawSmallSpheres",
-        .renderPipelineState = scene.smallSpherePipeline,
-        .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-        .drawIndexCount = scene.cellsSize,
-        .drawIndexType = mtlpp::IndexType::UInt32,
-        .drawIndexBuffer = scene.cells.buffer,
-        .vertexBuffers = std::vector({
-          &scene.positions.buffer,
-          &scene.normals.buffer,
-          &smallSphereUniforms.buffer,
-          &spherePropsUniforms.buffer,
-        }),
-        .fragmentBuffers = std::vector(
-          { &smallSphereUniforms.buffer, &spherePropsUniforms.buffer }),
-
-        // General draw config
-        .cullMode = mtlpp::CullMode::Front,
-        .depthStencilState = i == 0 ? scene.ignoreDepth : scene.writeDepth,
-      });
-    }
+    uniforms.matrices = GetModelMatrices(model, scene.view, scene.projection);
+    uniforms.brightness =
+      Random(SMALL_SPHERE_BRIGHTNESS_MIN, SMALL_SPHERE_BRIGHTNESS_MAX);
   }
+
+  draw.DrawIndexed({
+    .label = "DrawSmallSpheres",
+    .renderPipelineState = scene.smallSpherePipeline,
+    .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
+    .drawIndexCount = scene.cellsSize,
+    .drawIndexType = mtlpp::IndexType::UInt32,
+    .drawIndexBuffer = scene.cells.buffer,
+    .vertexBuffers = std::vector({
+      &scene.positions.buffer,
+      &scene.normals.buffer,
+      &scene.smallSphereUniforms.buffer,
+    }),
+    .fragmentBuffers = std::vector({ &scene.smallSphereUniforms.buffer }),
+
+    // Optional values.
+    .instanceCount = SMALL_SPHERE_COUNT,
+    .cullMode = mtlpp::CullMode::Front,
+    .depthStencilState = scene.writeDepth,
+  });
 }
 
 void

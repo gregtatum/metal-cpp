@@ -8,25 +8,22 @@ using namespace metal;
 vertex Varying
 smallSphereVert(const device packed_float3* vertexArray [[buffer(0)]],
                 const device packed_float3* normalArray [[buffer(1)]],
-                constant ModelUniforms& model [[buffer(2)]],
-                constant SpherePropsUniforms& sphereProps [[buffer(3)]],
-                unsigned int i [[vertex_id]])
+                constant ModelUniforms* model [[buffer(2)]],
+                unsigned int vid [[vertex_id]],
+                unsigned int iid [[instance_id]])
 {
   Varying varying;
-  float3 position = vertexArray[i];
-  // float3 modelNormal = normalArray[i];
-  // float3 normal = normalize(model.matrices.normalModelView * modelNormal);
-  varying.color = half4(half3(0.0, 1.0, 0.2) * sphereProps.brightness, 1.0);
+  float3 position = vertexArray[vid];
+  varying.color = half4(half3(0.0, 1.0, 0.2) * model[iid].brightness, 1.0);
   varying.projection =
-    model.matrices.modelViewProj * float4(position * sphereProps.scale, 1.0);
+    model[iid].matrices.modelViewProj * float4(position, 1.0);
 
   return varying;
 }
 
 fragment half4
 smallSphereFrag(Varying varying [[stage_in]],
-                constant ModelUniforms& model [[buffer(0)]],
-                constant SpherePropsUniforms& sphereProps [[buffer(1)]])
+                constant ModelUniforms& model [[buffer(0)]])
 {
   return half4(varying.color.xyz, 1.0);
 }

@@ -97,6 +97,7 @@ struct BufferViewList
 {
   BufferViewList(const BufferViewList&) = delete;
 
+  // Initialize the BufferViewList by pointing at some data.
   template<typename List>
   BufferViewList(Device& device, mtlpp::ResourceOptions options, List&& list)
   {
@@ -104,6 +105,21 @@ struct BufferViewList
     buffer = device.NewBuffer(&list[0], bytes, options);
     resourceOptions = options;
     data = std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() };
+  }
+
+  // Initialize the BufferViewList through a callback.
+  template<typename Fn>
+  BufferViewList(Device& device,
+                 mtlpp::ResourceOptions options,
+                 size_t size,
+                 Fn fn)
+  {
+    buffer = device.NewBuffer(sizeof(T) * size, options);
+    resourceOptions = options;
+    data = std::span<T>{ static_cast<T*>(buffer.GetContents()), size };
+    for (size_t i = 0; i < size; i++) {
+      data[i] = fn(i);
+    }
   }
 
   mtlpp::Buffer buffer;
@@ -405,7 +421,8 @@ struct DrawIndexedInitializer
   std::vector<mtlpp::Buffer*> vertexBuffers;
   std::vector<mtlpp::Buffer*> fragmentBuffers;
 
-  // General draw config
+  // Optional config:
+  std::optional<uint32_t> instanceCount;
   std::optional<mtlpp::CullMode> cullMode;
   std::optional<mtlpp::DepthStencilState> depthStencilState;
 };

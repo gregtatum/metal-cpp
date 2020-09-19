@@ -305,6 +305,7 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
          drawIndexBuffer,
          vertexBuffers,
          fragmentBuffers,
+         instanceCount,
          cullMode,
          depthStencilState] = initializer;
 
@@ -374,12 +375,22 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
     // clang-format on
   }
 
-  renderCommandEncoder.DrawIndexed(drawPrimitiveType,
-                                   drawIndexCount,
-                                   drawIndexType,
-                                   drawIndexBuffer,
-                                   // offset
-                                   0);
+  uint32_t indexBufferOffset = 0;
+
+  if (instanceCount) {
+    renderCommandEncoder.DrawIndexed(drawPrimitiveType,
+                                     drawIndexCount,
+                                     drawIndexType,
+                                     drawIndexBuffer,
+                                     indexBufferOffset,
+                                     instanceCount.value());
+  } else {
+    renderCommandEncoder.DrawIndexed(drawPrimitiveType,
+                                     drawIndexCount,
+                                     drawIndexType,
+                                     drawIndexBuffer,
+                                     indexBufferOffset);
+  }
 
   renderCommandEncoder.EndEncoding();
 }

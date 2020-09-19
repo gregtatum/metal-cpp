@@ -174,13 +174,13 @@ function runExample() {
   exampleSubProcess.on("close", (code, signal) => {
     if (isClosingSubProcess) {
       isClosingSubProcess = false;
-    } else if (signal === "SIGABRT") {
-      console.log("Example crashed, waiting for file changes to relaunch");
-      exampleSubProcess = null;
-      isClosingSubProcess = false;
     } else {
+      if (code || signal) {
+        console.log(`Signal: ${signal}`);
+        console.log(`code: ${code}`);
+      }
       console.log();
-      console.log('Example closed, hit "r" to re-launch it.');
+      console.log(`Example closed, hit "r" to re-launch it.`);
       exampleSubProcess = null;
       isClosingSubProcess = false;
       keepExampleClosed = true;
