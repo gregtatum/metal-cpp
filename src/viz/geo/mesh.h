@@ -1,8 +1,8 @@
 #pragma once
-#include "mtlpp/mtlpp.hpp"
 #include "viz/debug.h"
 #include "viz/macros.h"
 #include "viz/math.h"
+#include "viz/metal.h"
 #include <vector>
 
 namespace viz {

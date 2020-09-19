@@ -299,10 +299,10 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
 {
   auto& [label,
          renderPipelineState,
-         drawPrimitiveType,
-         drawIndexCount,
-         drawIndexType,
-         drawIndexBuffer,
+         primitiveType,
+         indexCount,
+         indexType,
+         indexBuffer,
          vertexBuffers,
          fragmentBuffers,
          instanceCount,
@@ -360,10 +360,10 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << label << std::endl;
     std::cout << "> DrawIndexed" << std::endl;
-    std::cout << "> "; Debug(drawPrimitiveType);
-    std::cout << "> Index Count: "; Debug(drawIndexCount);
-    std::cout << "> Index Type: "; Debug(drawIndexType);
-    // std::cout << "> Index Buffer: "; Debug(drawIndexBuffer, 1);
+    std::cout << "> "; Debug(primitiveType);
+    std::cout << "> Index Count: "; Debug(indexCount);
+    std::cout << "> Index Type: "; Debug(indexType);
+    // std::cout << "> Index Buffer: "; Debug(indexBuffer, 1);
     // std::cout << "> Vertex: "; Debug(vertexBuffers, 1);
     // std::cout << "> Fragment: "; Debug(fragmentBuffers, 1);
     if (cullMode) {
@@ -378,18 +378,15 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
   uint32_t indexBufferOffset = 0;
 
   if (instanceCount) {
-    renderCommandEncoder.DrawIndexed(drawPrimitiveType,
-                                     drawIndexCount,
-                                     drawIndexType,
-                                     drawIndexBuffer,
+    renderCommandEncoder.DrawIndexed(primitiveType,
+                                     indexCount,
+                                     indexType,
+                                     indexBuffer,
                                      indexBufferOffset,
                                      instanceCount.value());
   } else {
-    renderCommandEncoder.DrawIndexed(drawPrimitiveType,
-                                     drawIndexCount,
-                                     drawIndexType,
-                                     drawIndexBuffer,
-                                     indexBufferOffset);
+    renderCommandEncoder.DrawIndexed(
+      primitiveType, indexCount, indexType, indexBuffer, indexBufferOffset);
   }
 
   renderCommandEncoder.EndEncoding();
@@ -400,7 +397,7 @@ AutoDraw::Draw(DrawInitializer&& initializer)
 {
   auto& [label,
          renderPipelineState,
-         drawPrimitiveType,
+         primitiveType,
          vertexStart,
          vertexCount,
          vertexBuffers,
@@ -463,7 +460,7 @@ AutoDraw::Draw(DrawInitializer&& initializer)
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << label << std::endl;
     std::cout << "> Draw" << std::endl;
-    std::cout << "> "; Debug(drawPrimitiveType);
+    std::cout << "> "; Debug(primitiveType);
     std::cout << "> Vertex Start: "; Debug(vertexStart);
     std::cout << "> Vertex Count: "; Debug(vertexCount);
     // std::cout << "> Vertex: "; Debug(vertexBuffers, 1);
@@ -476,7 +473,7 @@ AutoDraw::Draw(DrawInitializer&& initializer)
     }
     // clang-format on
   }
-  renderCommandEncoder.Draw(drawPrimitiveType, vertexStart, vertexCount);
+  renderCommandEncoder.Draw(primitiveType, vertexStart, vertexCount);
 
   renderCommandEncoder.EndEncoding();
 }

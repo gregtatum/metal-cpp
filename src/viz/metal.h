@@ -414,10 +414,10 @@ struct DrawIndexedInitializer
 {
   const char* label;
   mtlpp::RenderPipelineState renderPipelineState;
-  mtlpp::PrimitiveType drawPrimitiveType;
-  uint32_t drawIndexCount;
-  mtlpp::IndexType drawIndexType;
-  const mtlpp::Buffer& drawIndexBuffer;
+  mtlpp::PrimitiveType primitiveType;
+  uint32_t indexCount;
+  mtlpp::IndexType indexType;
+  const mtlpp::Buffer& indexBuffer;
   std::vector<mtlpp::Buffer*> vertexBuffers;
   std::vector<mtlpp::Buffer*> fragmentBuffers;
 
@@ -431,13 +431,13 @@ struct DrawInitializer
 {
   const char* label;
   mtlpp::RenderPipelineState renderPipelineState;
-  mtlpp::PrimitiveType drawPrimitiveType;
+  mtlpp::PrimitiveType primitiveType;
   uint32_t vertexStart;
   uint32_t vertexCount;
   std::vector<mtlpp::Buffer*> vertexBuffers;
   std::vector<mtlpp::Buffer*> fragmentBuffers;
 
-  // General draw config
+  // Optional config:
   std::optional<mtlpp::CullMode> cullMode;
   std::optional<mtlpp::DepthStencilState> depthStencilState;
 };
@@ -450,10 +450,10 @@ struct DrawInitializer
 //   mtlpp::RenderPassDescriptor& renderPassDescriptor;
 
 //   // DrawIndexed options plus buffers.
-//   mtlpp::PrimitiveType drawPrimitiveType;
-//   uint32_t drawIndexCount;
-//   mtlpp::IndexType drawIndexType;
-//   const mtlpp::Buffer& drawIndexBuffer;
+//   mtlpp::PrimitiveType primitiveType;
+//   uint32_t indexCount;
+//   mtlpp::IndexType indexType;
+//   const mtlpp::Buffer& indexBuffer;
 //   std::optional<std::vector<mtlpp::Buffer*>> vertexBuffers;
 //   std::optional<std::vector<mtlpp::Buffer*>> fragmentBuffers;
 

@@ -117,10 +117,10 @@ run()
         draw.DrawIndexed({
           .label = "Box",
           // DrawIndexed options plus buffers.
-          .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-          .drawIndexCount = buffers.cellsSize,
-          .drawIndexType = mtlpp::IndexType::UInt32,
-          .drawIndexBuffer = buffers.cells.buffer,
+          .primitiveType = mtlpp::PrimitiveType::Triangle,
+          .indexCount = buffers.cellsSize,
+          .indexType = mtlpp::IndexType::UInt32,
+          .indexBuffer = buffers.cells.buffer,
           .vertexBuffers = std::vector({
             &buffers.positions.buffer,
             &buffers.normals.buffer,

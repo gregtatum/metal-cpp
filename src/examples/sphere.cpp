@@ -133,10 +133,10 @@ DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
   draw.DrawIndexed({
     .label = "DrawSmallSpheres",
     .renderPipelineState = scene.smallSpherePipeline,
-    .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-    .drawIndexCount = scene.smallSphereBuffers.indexCount,
-    .drawIndexType = mtlpp::IndexType::UInt32,
-    .drawIndexBuffer = scene.smallSphereBuffers.cells.buffer,
+    .primitiveType = mtlpp::PrimitiveType::Triangle,
+    .indexCount = scene.smallSphereBuffers.indexCount,
+    .indexType = mtlpp::IndexType::UInt32,
+    .indexBuffer = scene.smallSphereBuffers.cells.buffer,
     .vertexBuffers = std::vector({
       &scene.smallSphereBuffers.positions.buffer,
       &scene.smallSphereBuffers.normals.buffer,
@@ -165,10 +165,10 @@ DrawBigSphere(AutoDraw& draw, Tick& tick, Scene& scene)
   draw.DrawIndexed({
     .label = "DrawBigSphere",
     .renderPipelineState = scene.bigSpherePipeline,
-    .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-    .drawIndexCount = scene.bigSphereBuffers.indexCount,
-    .drawIndexType = mtlpp::IndexType::UInt32,
-    .drawIndexBuffer = scene.bigSphereBuffers.cells.buffer,
+    .primitiveType = mtlpp::PrimitiveType::Triangle,
+    .indexCount = scene.bigSphereBuffers.indexCount,
+    .indexType = mtlpp::IndexType::UInt32,
+    .indexBuffer = scene.bigSphereBuffers.cells.buffer,
     .vertexBuffers = std::vector({
       &scene.bigSphereBuffers.positions.buffer,
       &scene.bigSphereBuffers.normals.buffer,

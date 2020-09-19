@@ -47,7 +47,7 @@ BigTriangle::Draw(AutoDraw& draw)
   draw.Draw({
     .label = mLabel,
     .renderPipelineState = mPipeline,
-    .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
+    .primitiveType = mtlpp::PrimitiveType::Triangle,
     .vertexStart = 0,
     .vertexCount = 3,
     .vertexBuffers =

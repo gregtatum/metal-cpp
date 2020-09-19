@@ -94,10 +94,10 @@ run()
     draw.DrawIndexed({
       .label = "Bunny",
       // DrawIndexed options plus buffers.
-      .drawPrimitiveType = mtlpp::PrimitiveType::Triangle,
-      .drawIndexCount = buffers.cellsSize,
-      .drawIndexType = mtlpp::IndexType::UInt32,
-      .drawIndexBuffer = buffers.cells,
+      .primitiveType = mtlpp::PrimitiveType::Triangle,
+      .indexCount = buffers.cellsSize,
+      .indexType = mtlpp::IndexType::UInt32,
+      .indexBuffer = buffers.cells,
       .vertexBuffers = std::vector({
         &buffers.positions,
         &buffers.normals,
