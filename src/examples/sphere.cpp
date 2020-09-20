@@ -12,6 +12,7 @@
 // Now load other extraneous things.
 #include "./sphere.h"
 #include "viz/draw/big-triangle.h"
+#include "viz/draw/texture.h"
 #include "viz/geo/icosphere.h"
 
 using namespace viz;
