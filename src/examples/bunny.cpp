@@ -98,12 +98,12 @@ run()
       .indexCount = buffers.cellsSize,
       .indexType = mtlpp::IndexType::UInt32,
       .indexBuffer = buffers.cells,
-      .vertexBuffers = std::vector({
-        &buffers.positions,
-        &buffers.normals,
-        &buffers.uniforms,
+      .vertexInputs = std::vector({
+        ShaderInput(&buffers.positions),
+        ShaderInput(&buffers.normals),
+        ShaderInput(&buffers.uniforms),
       }),
-      .fragmentBuffers = std::vector({ &buffers.uniforms }),
+      .fragmentInputs = std::vector({ ShaderInput(&buffers.uniforms) }),
 
       // General draw config
       .cullMode = mtlpp::CullMode::Front,
