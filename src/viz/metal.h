@@ -69,21 +69,23 @@ CreateBufferFromList(Device& device, mtlpp::ResourceOptions options, List& list)
 }
 
 template<typename T>
-struct BufferViewStruct
+class BufferViewStruct
 {
+public:
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options)
+    : buffer(device.NewBuffer(sizeof(T), options))
+    , resourceOptions(options)
+    , data(static_cast<T*>(buffer.GetContents()))
+
   {
-    buffer = device.NewBuffer(sizeof(T), options);
-    resourceOptions = options;
-    data = static_cast<T*>(buffer.GetContents());
     *data = T{};
   }
 
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options, T&& value)
+    : buffer(device.NewBuffer(sizeof(T), options))
+    , resourceOptions(options)
+    , data(static_cast<T*>(buffer.GetContents()))
   {
-    buffer = device.NewBuffer(sizeof(T), options);
-    resourceOptions = options;
-    data = static_cast<T*>(buffer.GetContents());
     *data = value;
   }
 
@@ -93,19 +95,18 @@ struct BufferViewStruct
 };
 
 template<typename T>
-struct BufferViewList
+class BufferViewList
 {
+public:
   BufferViewList(const BufferViewList&) = delete;
 
   // Initialize the BufferViewList by pointing at some data.
   template<typename List>
   BufferViewList(Device& device, mtlpp::ResourceOptions options, List&& list)
-  {
-    uint32_t bytes = sizeof(list[0]) * list.size();
-    buffer = device.NewBuffer(&list[0], bytes, options);
-    resourceOptions = options;
-    data = std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() };
-  }
+    : buffer(device.NewBuffer(&list[0], sizeof(list[0]) * list.size(), options))
+    , resourceOptions(options)
+    , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() })
+  {}
 
   // Initialize the BufferViewList through a callback.
   template<typename Fn>
@@ -113,10 +114,10 @@ struct BufferViewList
                  mtlpp::ResourceOptions options,
                  size_t size,
                  Fn fn)
+    : buffer(device.NewBuffer(sizeof(T) * size, options))
+    , resourceOptions(options)
+    , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), size })
   {
-    buffer = device.NewBuffer(sizeof(T) * size, options);
-    resourceOptions = options;
-    data = std::span<T>{ static_cast<T*>(buffer.GetContents()), size };
     for (size_t i = 0; i < size; i++) {
       data[i] = fn(i);
     }
