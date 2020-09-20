@@ -178,9 +178,15 @@ function runExample() {
       if (code || signal) {
         console.log(`Signal: ${signal}`);
         console.log(`code: ${code}`);
+        console.log();
+        console.log(
+          `Example closed, hit "r" to re-launch it, or "q" then run:`
+        );
+        console.log(`lldb ./bin/${example}`);
+      } else {
+        console.log();
+        console.log(`Example closed, hit "r" to re-launch it.`);
       }
-      console.log();
-      console.log(`Example closed, hit "r" to re-launch it.`);
       exampleSubProcess = null;
       isClosingSubProcess = false;
       keepExampleClosed = true;
