@@ -50,9 +50,9 @@ BigTriangle::Draw(AutoDraw& draw)
     .primitiveType = mtlpp::PrimitiveType::Triangle,
     .vertexStart = 0,
     .vertexCount = 3,
-    .vertexBuffers =
-      std::vector({ &mPositions.buffer, &draw.GetTickUniforms().buffer }),
-    .fragmentBuffers = std::vector({ &draw.GetTickUniforms().buffer }),
+    .vertexInputs = std::vector(
+      { mPositions.shaderInput, draw.GetTickUniforms().shaderInput }),
+    .fragmentInputs = std::vector({ draw.GetTickUniforms().shaderInput }),
     // General draw config
     .cullMode = mtlpp::CullMode::None,
     .depthStencilState = mDepth,

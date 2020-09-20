@@ -303,8 +303,8 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
          indexCount,
          indexType,
          indexBuffer,
-         vertexBuffers,
-         fragmentBuffers,
+         vertexInputs,
+         fragmentInputs,
          instanceCount,
          cullMode,
          depthStencilState] = initializer;
@@ -333,16 +333,14 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
 
   renderCommandEncoder.SetRenderPipelineState(renderPipelineState);
 
-  for (size_t i = 0; i < vertexBuffers.size(); i++) {
-    auto& buffer = vertexBuffers[i];
-    ReleaseAssert(buffer, "VertexBuffer must exist.");
-    renderCommandEncoder.SetVertexBuffer(*buffer, 0, i);
+  for (size_t i = 0; i < vertexInputs.size(); i++) {
+    auto& vertexInput = vertexInputs[i];
+    vertexInput.SetVertex(renderCommandEncoder, i);
   }
 
-  for (size_t i = 0; i < fragmentBuffers.size(); i++) {
-    auto& buffer = fragmentBuffers[i];
-    ReleaseAssert(buffer, "FragmentBuffers must exist.");
-    renderCommandEncoder.SetFragmentBuffer(*buffer, 0, i);
+  for (size_t i = 0; i < fragmentInputs.size(); i++) {
+    auto& fragmentInput = fragmentInputs[i];
+    fragmentInput.SetFragment(renderCommandEncoder, i);
   }
 
   // Handle the optional configs.
@@ -400,8 +398,8 @@ AutoDraw::Draw(DrawInitializer&& initializer)
          primitiveType,
          vertexStart,
          vertexCount,
-         vertexBuffers,
-         fragmentBuffers,
+         vertexInputs,
+         fragmentInputs,
          cullMode,
          depthStencilState] = initializer;
 
@@ -429,20 +427,18 @@ AutoDraw::Draw(DrawInitializer&& initializer)
 
   renderCommandEncoder.SetRenderPipelineState(renderPipelineState);
 
-  ReleaseAssert(vertexBuffers.size() > 0,
-                "There must be at least 1 vertex buffer for a draw call.");
-  for (size_t i = 0; i < vertexBuffers.size(); i++) {
-    auto& buffer = vertexBuffers[i];
-    ReleaseAssert(buffer, "VertexBuffer must exist.");
-    renderCommandEncoder.SetVertexBuffer(*buffer, 0, i);
+  ReleaseAssert(vertexInputs.size() > 0,
+                "There must be at least 1 vertex input for a draw call.");
+  for (size_t i = 0; i < vertexInputs.size(); i++) {
+    auto& vertexInput = vertexInputs[i];
+    vertexInput.SetVertex(renderCommandEncoder, i);
   }
 
-  ReleaseAssert(fragmentBuffers.size() > 0,
+  ReleaseAssert(fragmentInputs.size() > 0,
                 "There must be at least 1 fragment buffer for a draw call.");
-  for (size_t i = 0; i < fragmentBuffers.size(); i++) {
-    auto& buffer = fragmentBuffers[i];
-    ReleaseAssert(buffer, "VertexBuffer must exist.");
-    renderCommandEncoder.SetFragmentBuffer(*buffer, 0, i);
+  for (size_t i = 0; i < fragmentInputs.size(); i++) {
+    auto& fragmentInput = fragmentInputs[i];
+    fragmentInput.SetFragment(renderCommandEncoder, i);
   }
 
   // Handle the optional configs.
@@ -476,6 +472,59 @@ AutoDraw::Draw(DrawInitializer&& initializer)
   renderCommandEncoder.Draw(primitiveType, vertexStart, vertexCount);
 
   renderCommandEncoder.EndEncoding();
+}
+
+ShaderInput::ShaderInput(mtlpp::Buffer* buffer)
+  : pointer(static_cast<void*>(buffer))
+  , tag(Tag::Buffer)
+{}
+
+ShaderInput::ShaderInput(mtlpp::Texture* texture)
+  : pointer(static_cast<void*>(texture))
+  , tag(Tag::Texture)
+{}
+
+void
+ShaderInput::SetFragment(mtlpp::RenderCommandEncoder& renderCommandEncoder,
+                         uint32_t index)
+{
+  ReleaseAssert(pointer != nullptr, "ShaderInput pointer was nullptr.");
+  switch (tag) {
+    case Buffer: {
+      auto buffer = static_cast<mtlpp::Buffer*>(pointer);
+      renderCommandEncoder.SetFragmentBuffer(*buffer, 0, index);
+      break;
+    }
+    case Texture: {
+      auto texture = static_cast<mtlpp::Texture*>(pointer);
+      renderCommandEncoder.SetFragmentTexture(*texture, index);
+      break;
+    }
+    default: {
+      throw new ErrorMessage("Unknown ShaderInput in SetFragment");
+    }
+  }
+}
+
+void
+ShaderInput::SetVertex(mtlpp::RenderCommandEncoder& renderCommandEncoder,
+                       uint32_t index)
+{
+  ReleaseAssert(pointer != nullptr, "ShaderInput pointer was nullptr.");
+  switch (tag) {
+    case Buffer: {
+      auto buffer = static_cast<mtlpp::Buffer*>(pointer);
+      renderCommandEncoder.SetVertexBuffer(*buffer, 0, index);
+      break;
+    }
+    case Texture: {
+      auto texture = static_cast<mtlpp::Texture*>(pointer);
+      renderCommandEncoder.SetVertexTexture(*texture, index);
+      break;
+    }
+    default:
+      throw new ErrorMessage("Unknown ShaderInput in SetFragment");
+  }
 }
 
 } // namespace viz

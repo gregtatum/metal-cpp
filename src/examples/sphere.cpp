@@ -138,12 +138,12 @@ DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
     .indexCount = scene.smallSphereBuffers.indexCount,
     .indexType = mtlpp::IndexType::UInt32,
     .indexBuffer = scene.smallSphereBuffers.cells.buffer,
-    .vertexBuffers = std::vector({
-      &scene.smallSphereBuffers.positions.buffer,
-      &scene.smallSphereBuffers.normals.buffer,
-      &scene.smallSphereUniforms.buffer,
+    .vertexInputs = std::vector({
+      scene.smallSphereBuffers.positions.shaderInput,
+      scene.smallSphereBuffers.normals.shaderInput,
+      scene.smallSphereUniforms.shaderInput,
     }),
-    .fragmentBuffers = std::vector({ &scene.smallSphereUniforms.buffer }),
+    .fragmentInputs = std::vector({ scene.smallSphereUniforms.shaderInput }),
 
     // Optional values.
     .instanceCount = SMALL_SPHERE_COUNT,
@@ -170,14 +170,14 @@ DrawBigSphere(AutoDraw& draw, Tick& tick, Scene& scene)
     .indexCount = scene.bigSphereBuffers.indexCount,
     .indexType = mtlpp::IndexType::UInt32,
     .indexBuffer = scene.bigSphereBuffers.cells.buffer,
-    .vertexBuffers = std::vector({
-      &scene.bigSphereBuffers.positions.buffer,
-      &scene.bigSphereBuffers.normals.buffer,
-      &scene.sceneUniforms.buffer,
-      &scene.bigSphereUniforms.buffer,
+    .vertexInputs = std::vector({
+      scene.bigSphereBuffers.positions.shaderInput,
+      scene.bigSphereBuffers.normals.shaderInput,
+      scene.sceneUniforms.shaderInput,
+      scene.bigSphereUniforms.shaderInput,
     }),
-    .fragmentBuffers = std::vector(
-      { &scene.sceneUniforms.buffer, &scene.bigSphereUniforms.buffer }),
+    .fragmentInputs = std::vector(
+      { scene.sceneUniforms.shaderInput, scene.bigSphereUniforms.shaderInput }),
 
     // General draw config
     .cullMode = mtlpp::CullMode::Front,

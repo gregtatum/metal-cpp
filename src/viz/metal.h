@@ -57,6 +57,31 @@ mtlpp::Library
 CreateLibraryForExample(Device device);
 
 /**
+ * This class is a discriminating union of anything that can be used as an input
+ * to a fragment or vertex shader function.
+ */
+class ShaderInput
+{
+  enum Tag
+  {
+    Buffer,
+    Texture
+  };
+
+public:
+  ShaderInput(mtlpp::Buffer* buffer);
+  ShaderInput(mtlpp::Texture* texture);
+  void SetFragment(mtlpp::RenderCommandEncoder& renderCommandEncoder,
+                   uint32_t index);
+  void SetVertex(mtlpp::RenderCommandEncoder& renderCommandEncoder,
+                 uint32_t index);
+
+private:
+  void* pointer;
+  Tag tag;
+};
+
+/**
  * Creates a metal Buffer with a std::vector or std::span. It handles computing
  * the byte size.
  */
@@ -74,6 +99,7 @@ class BufferViewStruct
 public:
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options)
     : buffer(device.NewBuffer(sizeof(T), options))
+    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(static_cast<T*>(buffer.GetContents()))
 
@@ -83,6 +109,7 @@ public:
 
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options, T&& value)
     : buffer(device.NewBuffer(sizeof(T), options))
+    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(static_cast<T*>(buffer.GetContents()))
   {
@@ -92,6 +119,7 @@ public:
   mtlpp::Buffer buffer;
   mtlpp::ResourceOptions resourceOptions;
   T* data;
+  ShaderInput shaderInput;
 };
 
 template<typename T>
@@ -104,6 +132,7 @@ public:
   template<typename List>
   BufferViewList(Device& device, mtlpp::ResourceOptions options, List&& list)
     : buffer(device.NewBuffer(&list[0], sizeof(list[0]) * list.size(), options))
+    , shaderInput(ShaderInput(&buffer))
     , resourceOptions(options)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() })
   {}
@@ -115,6 +144,7 @@ public:
                  size_t size,
                  Fn fn)
     : buffer(device.NewBuffer(sizeof(T) * size, options))
+    , shaderInput(ShaderInput(&buffer))
     , resourceOptions(options)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), size })
   {
@@ -127,6 +157,7 @@ public:
   mtlpp::ResourceOptions resourceOptions;
   // The span points to the data in the buffer.
   std::span<T> data;
+  ShaderInput shaderInput;
 };
 
 namespace traits {
@@ -419,8 +450,8 @@ struct DrawIndexedInitializer
   uint32_t indexCount;
   mtlpp::IndexType indexType;
   const mtlpp::Buffer& indexBuffer;
-  std::vector<mtlpp::Buffer*> vertexBuffers;
-  std::vector<mtlpp::Buffer*> fragmentBuffers;
+  std::vector<ShaderInput> vertexInputs;
+  std::vector<ShaderInput> fragmentInputs;
 
   // Optional config:
   std::optional<uint32_t> instanceCount;
@@ -435,8 +466,8 @@ struct DrawInitializer
   mtlpp::PrimitiveType primitiveType;
   uint32_t vertexStart;
   uint32_t vertexCount;
-  std::vector<mtlpp::Buffer*> vertexBuffers;
-  std::vector<mtlpp::Buffer*> fragmentBuffers;
+  std::vector<ShaderInput> vertexInputs;
+  std::vector<ShaderInput> fragmentInputs;
 
   // Optional config:
   std::optional<mtlpp::CullMode> cullMode;
