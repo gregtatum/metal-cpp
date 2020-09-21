@@ -10,7 +10,7 @@ CPP_FLAGS := \
 	# TODO: -Wall -Werror
 
 ifdef RELEASE
-CPP_FLAGS += -NDEBUG
+CPP_FLAGS += -DNDEBUG
 else
 CPP_FLAGS += -DDEBUG
 METAL_FLAGS += -gline-tables-only -MO
