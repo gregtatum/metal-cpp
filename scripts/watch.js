@@ -101,6 +101,12 @@ function listenToKeyboard() {
         }
         closeAndRebuild();
         break;
+      case "r":
+        closeSubprocess();
+        clearConsole();
+        runExample();
+        keepExampleClosed = false;
+        break;
       case "l":
         closeSubprocess();
         clearConsole();
