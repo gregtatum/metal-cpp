@@ -1,6 +1,7 @@
 #include <Foundation/NSError.h>
 #include <Metal/MTLCaptureManager.h>
 #include <Metal/MTLDevice.h>
+#include <cstdlib>
 #include <iostream>
 #include <sstream> // std::ostringstream
 #include <string>
@@ -385,8 +386,7 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
     renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
   }
 
-  // Disable debug printing now that GPU tracing is available:
-  if (false && mTick.tick == 0) {
+  if (mTick.tick == 0 && std::getenv("LOG_SHADER_CALLS")) {
     // clang-format off
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << label << std::endl;
@@ -397,6 +397,9 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
     // std::cout << "> Index Buffer: "; Debug(indexBuffer, 1);
     // std::cout << "> Vertex: "; Debug(vertexBuffers, 1);
     // std::cout << "> Fragment: "; Debug(fragmentBuffers, 1);
+    if (instanceCount) {
+      std::cout << "> Instance count: "; Debug(instanceCount.value());
+    }
     if (cullMode) {
       std::cout << "> "; Debug(cullMode.value());
     }
@@ -483,8 +486,7 @@ AutoDraw::Draw(DrawInitializer&& initializer)
     renderCommandEncoder.SetDepthStencilState(depthStencilState.value());
   }
 
-  // Disable for now
-  if (false && mTick.tick == 0) {
+  if (mTick.tick == 0 && std::getenv("LOG_SHADER_CALLS")) {
     // clang-format off
     std::cout << "-------------------------------------------" << std::endl;
     std::cout << label << std::endl;
