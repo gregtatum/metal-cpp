@@ -39,10 +39,10 @@ class BigTriangle
 {
 public:
   BigTriangle() = delete;
-  explicit BigTriangle(const char* label,
-                       Device& device,
+  explicit BigTriangle(Device& device,
                        mtlpp::Library& library,
-                       mtlpp::Function&& fragmentFunction);
+                       const char* label,
+                       const char* fragmentFunction);
 
   void Draw(AutoDraw& draw);
   BufferViewList<viz::Vector2> mPositions;

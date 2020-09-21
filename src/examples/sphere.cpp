@@ -80,9 +80,10 @@ CreateScene(Device& device)
       device, cpuWrite, SMALL_SPHERE_COUNT, initializeSmallSpheres),
     .smallSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
+      .library = library,
       .label = "Small Sphere Pipeline",
-      .vertexFunction = library.NewFunction("smallSphereVert"),
-      .fragmentFunction = library.NewFunction("smallSphereFrag"),
+      .vertexFunction = "smallSphereVert",
+      .fragmentFunction = "smallSphereFrag",
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
       .colorAttachmentPixelFormats =
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
@@ -91,17 +92,16 @@ CreateScene(Device& device)
     .bigSphereUniforms = bigSphereUniforms,
     .bigSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
+      .library = library,
       .label = "Big Sphere Pipeline",
-      .vertexFunction = library.NewFunction("bigSphereVert"),
-      .fragmentFunction = library.NewFunction("bigSphereFrag"),
+      .vertexFunction = "bigSphereVert",
+      .fragmentFunction = "bigSphereFrag",
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
       .colorAttachmentPixelFormats =
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
     }),
 
-    .background =
-      BigTriangle{
-        "Background", device, library, library.NewFunction("background") },
+    .background = BigTriangle{ device, library, "Background", "background" },
 
     .writeDepth = InitializeDepthStencil({
       .device = device,

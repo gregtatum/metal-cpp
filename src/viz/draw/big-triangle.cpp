@@ -3,10 +3,10 @@
 
 namespace viz {
 
-BigTriangle::BigTriangle(const char* label,
-                         Device& device,
+BigTriangle::BigTriangle(Device& device,
                          mtlpp::Library& library,
-                         mtlpp::Function&& fragmentFunction)
+                         const char* label,
+                         const char* fragmentFunction)
   : mPositions(
       BufferViewList<Vector2>(device,
                               mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
@@ -24,10 +24,11 @@ BigTriangle::BigTriangle(const char* label,
       mtlpp::ResourceOptions::CpuCacheModeWriteCombined))
   , mPipeline(viz::InitializeRenderPipeline({
       .device = device,
+      .library = library,
       .label = "Big Triangle Pipeline",
-      .vertexFunction = library.NewFunction("bigTriangleVert"),
+      .vertexFunction = "bigTriangleVert",
       // This can be used here initially:
-      // .fragmentFunction = library.NewFunction("background"),
+      // .fragmentFunction = "background",
       .fragmentFunction = fragmentFunction,
       .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
       .colorAttachmentPixelFormats =

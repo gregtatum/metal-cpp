@@ -62,9 +62,10 @@ run()
   // and fragment shader.
   auto pipeline = viz::InitializeRenderPipeline({
     .device = device,
+    .library = library,
     .label = "Basic rendering function",
-    .vertexFunction = library.NewFunction("vert"),
-    .fragmentFunction = library.NewFunction("frag"),
+    .vertexFunction = "vert",
+    .fragmentFunction = "frag",
     .depthAttachmentPixelFormat = mtlpp::PixelFormat::Depth32Float,
     .colorAttachmentPixelFormats =
       std::vector{ mtlpp::PixelFormat::BGRA8Unorm },

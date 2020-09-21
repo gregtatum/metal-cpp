@@ -132,7 +132,7 @@ public:
   template<typename List>
   BufferViewList(Device& device, mtlpp::ResourceOptions options, List&& list)
     : buffer(device.NewBuffer(&list[0], sizeof(list[0]) * list.size(), options))
-    , shaderInput(ShaderInput(&buffer))
+    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() })
   {}
@@ -144,7 +144,7 @@ public:
                  size_t size,
                  Fn fn)
     : buffer(device.NewBuffer(sizeof(T) * size, options))
-    , shaderInput(ShaderInput(&buffer))
+    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), size })
   {
@@ -416,9 +416,10 @@ InitializeBuffer(mtlpp::Buffer& buffer, T&& value)
 struct RenderPipelineInitializer
 {
   mtlpp::Device& device;
+  mtlpp::Library& library;
   std::optional<const char*> label = std::nullopt;
-  std::optional<const mtlpp::Function> vertexFunction = std::nullopt;
-  std::optional<const mtlpp::Function> fragmentFunction = std::nullopt;
+  std::optional<const std::string> vertexFunction = std::nullopt;
+  std::optional<const std::string> fragmentFunction = std::nullopt;
   std::optional<const mtlpp::PixelFormat> depthAttachmentPixelFormat =
     std::nullopt;
   std::vector<mtlpp::PixelFormat> colorAttachmentPixelFormats = {};

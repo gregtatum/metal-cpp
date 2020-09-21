@@ -18,6 +18,16 @@
 
 namespace viz {
 
+/**
+ * Checks if a mtlpp object is Nil, but looking into the Objective C value.
+ */
+template<typename ObjCType, typename T>
+bool
+IsNil(T value)
+{
+  return OBJC(ObjCType, value) == nil;
+}
+
 NicerNSError::operator bool() const
 {
   return mError.GetPtr() != nil;
@@ -162,15 +172,38 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
 {
   mtlpp::RenderPipelineDescriptor descriptor;
 
+  const char* label = initializer.label ? initializer.label.value() : "unnamed";
   if (initializer.label)
     descriptor.SetLabel(initializer.label.value());
-  if (initializer.vertexFunction)
-    descriptor.SetVertexFunction(initializer.vertexFunction.value());
-  if (initializer.fragmentFunction)
-    descriptor.SetFragmentFunction(initializer.fragmentFunction.value());
+
+  if (initializer.vertexFunction) {
+    const char* name = initializer.vertexFunction.value().c_str();
+    auto fn = initializer.library.NewFunction(name);
+    if (IsNil<id<MTLFunction>>(fn)) {
+      throw new ErrorMessage(
+        std::string{ "Vertex function \"" } + std::string{ name } +
+        std::string{ "\" was not found when initializing " } +
+        std::string{ label } + std::string{ "\n" });
+    }
+    descriptor.SetVertexFunction(fn);
+  }
+
+  if (initializer.fragmentFunction) {
+    const char* name = initializer.fragmentFunction.value().c_str();
+    auto fn = initializer.library.NewFunction(name);
+    descriptor.SetFragmentFunction(fn);
+    if (IsNil<id<MTLFunction>>(fn)) {
+      throw new ErrorMessage(
+        std::string{ "Fragment function \"" } + std::string{ name } +
+        std::string{ "\" was not found when initializing " } +
+        std::string{ label } + std::string{ "\n" });
+    }
+  }
+
   if (initializer.depthAttachmentPixelFormat)
     descriptor.SetDepthAttachmentPixelFormat(
       initializer.depthAttachmentPixelFormat.value());
+
   for (size_t i = 0; i < initializer.colorAttachmentPixelFormats.size(); i++) {
     descriptor.GetColorAttachments()[i].SetPixelFormat(
       initializer.colorAttachmentPixelFormats[i]);
