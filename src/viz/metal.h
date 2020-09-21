@@ -175,6 +175,8 @@ struct mtlpp_depthstencilstate
 {};
 struct mtlpp_indextype
 {};
+struct mtlpp_pixelformat
+{};
 
 template<typename T>
 struct tag<BufferViewStruct<T>>
@@ -215,6 +217,13 @@ template<>
 struct tag<mtlpp::DepthStencilState>
 {
   typedef mtlpp_depthstencilstate type;
+  typedef empty child;
+};
+
+template<>
+struct tag<mtlpp::PixelFormat>
+{
+  typedef mtlpp_pixelformat type;
   typedef empty child;
 };
 
@@ -349,11 +358,11 @@ struct debug<traits::mtlpp_cullmode, mtlpp::CullMode>
 template<>
 struct debug<traits::mtlpp_indextype, mtlpp::IndexType>
 {
-  static void apply(mtlpp::IndexType const& IndexType, size_t tabDepth = 0)
+  static void apply(mtlpp::IndexType const& state, size_t tabDepth = 0)
   {
     std::cout << "IndexType::";
 
-    switch (IndexType) {
+    switch (state) {
       case IndexType::UInt16:
         std::cout << "UInt16";
         break;
@@ -376,6 +385,392 @@ struct debug<traits::mtlpp_depthstencilstate, mtlpp::DepthStencilState>
       std::cout << state.GetLabel().GetCStr() << " }";
     } else {
       std::cout << "}";
+    }
+  }
+};
+
+template<>
+struct debug<traits::mtlpp_pixelformat, mtlpp::PixelFormat>
+{
+  static void apply(mtlpp::PixelFormat const& state, size_t tabDepth = 0)
+  {
+    std::cout << "PixelFormat::";
+
+    switch (state) {
+      case PixelFormat::Invalid:
+        std::cout << "Invalid";
+        break;
+      case PixelFormat::A8Unorm:
+        std::cout << "A8Unorm";
+        break;
+      case PixelFormat::R8Unorm:
+        std::cout << "R8Unorm";
+        break;
+      case PixelFormat::R8Unorm_sRGB:
+        std::cout << "R8Unorm_sRGB";
+        break;
+      case PixelFormat::R8Snorm:
+        std::cout << "R8Snorm";
+        break;
+      case PixelFormat::R8Uint:
+        std::cout << "R8Uint";
+        break;
+      case PixelFormat::R8Sint:
+        std::cout << "R8Sint";
+        break;
+      case PixelFormat::R16Unorm:
+        std::cout << "R16Unorm";
+        break;
+      case PixelFormat::R16Snorm:
+        std::cout << "R16Snorm";
+        break;
+      case PixelFormat::R16Uint:
+        std::cout << "R16Uint";
+        break;
+      case PixelFormat::R16Sint:
+        std::cout << "R16Sint";
+        break;
+      case PixelFormat::R16Float:
+        std::cout << "R16Float";
+        break;
+      case PixelFormat::RG8Unorm:
+        std::cout << "RG8Unorm";
+        break;
+      case PixelFormat::RG8Unorm_sRGB:
+        std::cout << "RG8Unorm_sRGB";
+        break;
+      case PixelFormat::RG8Snorm:
+        std::cout << "RG8Snorm";
+        break;
+      case PixelFormat::RG8Uint:
+        std::cout << "RG8Uint";
+        break;
+      case PixelFormat::RG8Sint:
+        std::cout << "RG8Sint";
+        break;
+      case PixelFormat::B5G6R5Unorm:
+        std::cout << "B5G6R5Unorm";
+        break;
+      case PixelFormat::A1BGR5Unorm:
+        std::cout << "A1BGR5Unorm";
+        break;
+      case PixelFormat::ABGR4Unorm:
+        std::cout << "ABGR4Unorm";
+        break;
+      case PixelFormat::BGR5A1Unorm:
+        std::cout << "BGR5A1Unorm";
+        break;
+      case PixelFormat::R32Uint:
+        std::cout << "R32Uint";
+        break;
+      case PixelFormat::R32Sint:
+        std::cout << "R32Sint";
+        break;
+      case PixelFormat::R32Float:
+        std::cout << "R32Float";
+        break;
+      case PixelFormat::RG16Unorm:
+        std::cout << "RG16Unorm";
+        break;
+      case PixelFormat::RG16Snorm:
+        std::cout << "RG16Snorm";
+        break;
+      case PixelFormat::RG16Uint:
+        std::cout << "RG16Uint";
+        break;
+      case PixelFormat::RG16Sint:
+        std::cout << "RG16Sint";
+        break;
+      case PixelFormat::RG16Float:
+        std::cout << "RG16Float";
+        break;
+      case PixelFormat::RGBA8Unorm:
+        std::cout << "RGBA8Unorm";
+        break;
+      case PixelFormat::RGBA8Unorm_sRGB:
+        std::cout << "RGBA8Unorm_sRGB";
+        break;
+      case PixelFormat::RGBA8Snorm:
+        std::cout << "RGBA8Snorm";
+        break;
+      case PixelFormat::RGBA8Uint:
+        std::cout << "RGBA8Uint";
+        break;
+      case PixelFormat::RGBA8Sint:
+        std::cout << "RGBA8Sint";
+        break;
+      case PixelFormat::BGRA8Unorm:
+        std::cout << "BGRA8Unorm";
+        break;
+      case PixelFormat::BGRA8Unorm_sRGB:
+        std::cout << "BGRA8Unorm_sRGB";
+        break;
+      case PixelFormat::RGB10A2Unorm:
+        std::cout << "RGB10A2Unorm";
+        break;
+      case PixelFormat::RGB10A2Uint:
+        std::cout << "RGB10A2Uint";
+        break;
+      case PixelFormat::RG11B10Float:
+        std::cout << "RG11B10Float";
+        break;
+      case PixelFormat::RGB9E5Float:
+        std::cout << "RGB9E5Float";
+        break;
+      case PixelFormat::BGR10_XR:
+        std::cout << "BGR10_XR";
+        break;
+      case PixelFormat::BGR10_XR_sRGB:
+        std::cout << "BGR10_XR_sRGB";
+        break;
+      case PixelFormat::RG32Uint:
+        std::cout << "RG32Uint";
+        break;
+      case PixelFormat::RG32Sint:
+        std::cout << "RG32Sint";
+        break;
+      case PixelFormat::RG32Float:
+        std::cout << "RG32Float";
+        break;
+      case PixelFormat::RGBA16Unorm:
+        std::cout << "RGBA16Unorm";
+        break;
+      case PixelFormat::RGBA16Snorm:
+        std::cout << "RGBA16Snorm";
+        break;
+      case PixelFormat::RGBA16Uint:
+        std::cout << "RGBA16Uint";
+        break;
+      case PixelFormat::RGBA16Sint:
+        std::cout << "RGBA16Sint";
+        break;
+      case PixelFormat::RGBA16Float:
+        std::cout << "RGBA16Float";
+        break;
+      case PixelFormat::BGRA10_XR:
+        std::cout << "BGRA10_XR";
+        break;
+      case PixelFormat::BGRA10_XR_sRGB:
+        std::cout << "BGRA10_XR_sRGB";
+        break;
+      case PixelFormat::RGBA32Uint:
+        std::cout << "RGBA32Uint";
+        break;
+      case PixelFormat::RGBA32Sint:
+        std::cout << "RGBA32Sint";
+        break;
+      case PixelFormat::RGBA32Float:
+        std::cout << "RGBA32Float";
+        break;
+      case PixelFormat::BC1_RGBA:
+        std::cout << "BC1_RGBA";
+        break;
+      case PixelFormat::BC1_RGBA_sRGB:
+        std::cout << "BC1_RGBA_sRGB";
+        break;
+      case PixelFormat::BC2_RGBA:
+        std::cout << "BC2_RGBA";
+        break;
+      case PixelFormat::BC2_RGBA_sRGB:
+        std::cout << "BC2_RGBA_sRGB";
+        break;
+      case PixelFormat::BC3_RGBA:
+        std::cout << "BC3_RGBA";
+        break;
+      case PixelFormat::BC3_RGBA_sRGB:
+        std::cout << "BC3_RGBA_sRGB";
+        break;
+      case PixelFormat::BC4_RUnorm:
+        std::cout << "BC4_RUnorm";
+        break;
+      case PixelFormat::BC4_RSnorm:
+        std::cout << "BC4_RSnorm";
+        break;
+      case PixelFormat::BC5_RGUnorm:
+        std::cout << "BC5_RGUnorm";
+        break;
+      case PixelFormat::BC5_RGSnorm:
+        std::cout << "BC5_RGSnorm";
+        break;
+      case PixelFormat::BC6H_RGBFloat:
+        std::cout << "BC6H_RGBFloat";
+        break;
+      case PixelFormat::BC6H_RGBUfloat:
+        std::cout << "BC6H_RGBUfloat";
+        break;
+      case PixelFormat::BC7_RGBAUnorm:
+        std::cout << "BC7_RGBAUnorm";
+        break;
+      case PixelFormat::BC7_RGBAUnorm_sRGB:
+        std::cout << "BC7_RGBAUnorm_sRGB";
+        break;
+      case PixelFormat::PVRTC_RGB_2BPP:
+        std::cout << "PVRTC_RGB_2BPP";
+        break;
+      case PixelFormat::PVRTC_RGB_2BPP_sRGB:
+        std::cout << "PVRTC_RGB_2BPP_sRGB";
+        break;
+      case PixelFormat::PVRTC_RGB_4BPP:
+        std::cout << "PVRTC_RGB_4BPP";
+        break;
+      case PixelFormat::PVRTC_RGB_4BPP_sRGB:
+        std::cout << "PVRTC_RGB_4BPP_sRGB";
+        break;
+      case PixelFormat::PVRTC_RGBA_2BPP:
+        std::cout << "PVRTC_RGBA_2BPP";
+        break;
+      case PixelFormat::PVRTC_RGBA_2BPP_sRGB:
+        std::cout << "PVRTC_RGBA_2BPP_sRGB";
+        break;
+      case PixelFormat::PVRTC_RGBA_4BPP:
+        std::cout << "PVRTC_RGBA_4BPP";
+        break;
+      case PixelFormat::PVRTC_RGBA_4BPP_sRGB:
+        std::cout << "PVRTC_RGBA_4BPP_sRGB";
+        break;
+      case PixelFormat::EAC_R11Unorm:
+        std::cout << "EAC_R11Unorm";
+        break;
+      case PixelFormat::EAC_R11Snorm:
+        std::cout << "EAC_R11Snorm";
+        break;
+      case PixelFormat::EAC_RG11Unorm:
+        std::cout << "EAC_RG11Unorm";
+        break;
+      case PixelFormat::EAC_RG11Snorm:
+        std::cout << "EAC_RG11Snorm";
+        break;
+      case PixelFormat::EAC_RGBA8:
+        std::cout << "EAC_RGBA8";
+        break;
+      case PixelFormat::EAC_RGBA8_sRGB:
+        std::cout << "EAC_RGBA8_sRGB";
+        break;
+      case PixelFormat::ETC2_RGB8:
+        std::cout << "ETC2_RGB8";
+        break;
+      case PixelFormat::ETC2_RGB8_sRGB:
+        std::cout << "ETC2_RGB8_sRGB";
+        break;
+      case PixelFormat::ETC2_RGB8A1:
+        std::cout << "ETC2_RGB8A1";
+        break;
+      case PixelFormat::ETC2_RGB8A1_sRGB:
+        std::cout << "ETC2_RGB8A1_sRGB";
+        break;
+      case PixelFormat::ASTC_4x4_sRGB:
+        std::cout << "ASTC_4x4_sRGB";
+        break;
+      case PixelFormat::ASTC_5x4_sRGB:
+        std::cout << "ASTC_5x4_sRGB";
+        break;
+      case PixelFormat::ASTC_5x5_sRGB:
+        std::cout << "ASTC_5x5_sRGB";
+        break;
+      case PixelFormat::ASTC_6x5_sRGB:
+        std::cout << "ASTC_6x5_sRGB";
+        break;
+      case PixelFormat::ASTC_6x6_sRGB:
+        std::cout << "ASTC_6x6_sRGB";
+        break;
+      case PixelFormat::ASTC_8x5_sRGB:
+        std::cout << "ASTC_8x5_sRGB";
+        break;
+      case PixelFormat::ASTC_8x6_sRGB:
+        std::cout << "ASTC_8x6_sRGB";
+        break;
+      case PixelFormat::ASTC_8x8_sRGB:
+        std::cout << "ASTC_8x8_sRGB";
+        break;
+      case PixelFormat::ASTC_10x5_sRGB:
+        std::cout << "ASTC_10x5_sRGB";
+        break;
+      case PixelFormat::ASTC_10x6_sRGB:
+        std::cout << "ASTC_10x6_sRGB";
+        break;
+      case PixelFormat::ASTC_10x8_sRGB:
+        std::cout << "ASTC_10x8_sRGB";
+        break;
+      case PixelFormat::ASTC_10x10_sRGB:
+        std::cout << "ASTC_10x10_sRGB";
+        break;
+      case PixelFormat::ASTC_12x10_sRGB:
+        std::cout << "ASTC_12x10_sRGB";
+        break;
+      case PixelFormat::ASTC_12x12_sRGB:
+        std::cout << "ASTC_12x12_sRGB";
+        break;
+      case PixelFormat::ASTC_4x4_LDR:
+        std::cout << "ASTC_4x4_LDR";
+        break;
+      case PixelFormat::ASTC_5x4_LDR:
+        std::cout << "ASTC_5x4_LDR";
+        break;
+      case PixelFormat::ASTC_5x5_LDR:
+        std::cout << "ASTC_5x5_LDR";
+        break;
+      case PixelFormat::ASTC_6x5_LDR:
+        std::cout << "ASTC_6x5_LDR";
+        break;
+      case PixelFormat::ASTC_6x6_LDR:
+        std::cout << "ASTC_6x6_LDR";
+        break;
+      case PixelFormat::ASTC_8x5_LDR:
+        std::cout << "ASTC_8x5_LDR";
+        break;
+      case PixelFormat::ASTC_8x6_LDR:
+        std::cout << "ASTC_8x6_LDR";
+        break;
+      case PixelFormat::ASTC_8x8_LDR:
+        std::cout << "ASTC_8x8_LDR";
+        break;
+      case PixelFormat::ASTC_10x5_LDR:
+        std::cout << "ASTC_10x5_LDR";
+        break;
+      case PixelFormat::ASTC_10x6_LDR:
+        std::cout << "ASTC_10x6_LDR";
+        break;
+      case PixelFormat::ASTC_10x8_LDR:
+        std::cout << "ASTC_10x8_LDR";
+        break;
+      case PixelFormat::ASTC_10x10_LDR:
+        std::cout << "ASTC_10x10_LDR";
+        break;
+      case PixelFormat::ASTC_12x10_LDR:
+        std::cout << "ASTC_12x10_LDR";
+        break;
+      case PixelFormat::ASTC_12x12_LDR:
+        std::cout << "ASTC_12x12_LDR";
+        break;
+      case PixelFormat::GBGR422:
+        std::cout << "GBGR422";
+        break;
+      case PixelFormat::BGRG422:
+        std::cout << "BGRG422";
+        break;
+      case PixelFormat::Depth16Unorm:
+        std::cout << "Depth16Unorm";
+        break;
+      case PixelFormat::Depth32Float:
+        std::cout << "Depth32Float";
+        break;
+      case PixelFormat::Stencil8:
+        std::cout << "Stencil8";
+        break;
+      case PixelFormat::Depth24Unorm_Stencil8:
+        std::cout << "Depth24Unorm_Stencil8";
+        break;
+      case PixelFormat::Depth32Float_Stencil8:
+        std::cout << "Depth32Float_Stencil8";
+        break;
+      case PixelFormat::X32_Stencil8:
+        std::cout << "X32_Stencil8";
+        break;
+      case PixelFormat::X24_Stencil8:
+        std::cout << "X24_Stencil8";
+        break;
+      default:
+        throw ErrorMessage("Unknown PixelFormat");
     }
   }
 };

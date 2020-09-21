@@ -210,6 +210,27 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
       initializer.colorAttachmentPixelFormats[i]);
   }
 
+  if (std::getenv("LOG_SHADER_CALLS")) {
+    // clang-format off
+    std::cout << "-------------------------------------------" << std::endl;
+    std::cout << label << " Pipeline" << std::endl;
+    if (initializer.vertexFunction) {
+      std::cout << "> Vertex function: " << initializer.vertexFunction.value() << std::endl;
+    }
+    if (initializer.fragmentFunction) {
+      std::cout << "> Fragment function: " << initializer.fragmentFunction.value() << std::endl;
+    }
+    if (initializer.depthAttachmentPixelFormat) {
+      std::cout << "> Depth Attachment Pixel Format: ";
+      Debug(initializer.depthAttachmentPixelFormat.value());
+    }
+    for (size_t i = 0; i < initializer.colorAttachmentPixelFormats.size(); i++) {
+      std::cout << "> Color Attachment Pixel Formats " << i << ": ";
+      Debug(initializer.colorAttachmentPixelFormats[i]);
+    }
+    // clang-format on
+  }
+
   return returnOrThrow<mtlpp::RenderPipelineState>([&](NSError*& error) {
     auto mtlDevice = OBJC(id<MTLDevice>, initializer.device);
     auto mtlDescriptor = OBJC(MTLRenderPipelineDescriptor*, descriptor);
