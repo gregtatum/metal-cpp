@@ -97,9 +97,13 @@ template<typename T>
 class BufferViewStruct
 {
 public:
+  // Copy
+  BufferViewStruct(const BufferViewStruct& other) = delete;
+  // Move
+  BufferViewStruct& operator=(const BufferViewStruct&) = default;
+
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options)
     : buffer(device.NewBuffer(sizeof(T), options))
-    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(static_cast<T*>(buffer.GetContents()))
 
@@ -107,44 +111,45 @@ public:
     *data = T{};
   }
 
-  BufferViewStruct(Device& device, mtlpp::ResourceOptions options, T&& value)
+  BufferViewStruct(T&& value, Device& device, mtlpp::ResourceOptions options)
     : buffer(device.NewBuffer(sizeof(T), options))
-    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(static_cast<T*>(buffer.GetContents()))
   {
     *data = value;
   }
 
+  viz::ShaderInput ShaderInput() { return viz::ShaderInput(&buffer); };
+
   mtlpp::Buffer buffer;
   mtlpp::ResourceOptions resourceOptions;
   T* data;
-  ShaderInput shaderInput;
 };
 
 template<typename T>
 class BufferViewList
 {
 public:
+  // Copy
   BufferViewList(const BufferViewList&) = delete;
+  // Move
+  BufferViewList& operator=(const BufferViewList&) = default;
 
   // Initialize the BufferViewList by pointing at some data.
   template<typename List>
-  BufferViewList(Device& device, mtlpp::ResourceOptions options, List&& list)
+  BufferViewList(List&& list, Device& device, mtlpp::ResourceOptions options)
     : buffer(device.NewBuffer(&list[0], sizeof(list[0]) * list.size(), options))
-    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() })
   {}
 
   // Initialize the BufferViewList through a callback.
   template<typename Fn>
-  BufferViewList(Device& device,
+  BufferViewList(Fn fn,
+                 Device& device,
                  mtlpp::ResourceOptions options,
-                 size_t size,
-                 Fn fn)
+                 size_t size)
     : buffer(device.NewBuffer(sizeof(T) * size, options))
-    , shaderInput(&buffer)
     , resourceOptions(options)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), size })
   {
@@ -153,11 +158,12 @@ public:
     }
   }
 
+  viz::ShaderInput ShaderInput() { return viz::ShaderInput(&buffer); };
+
   mtlpp::Buffer buffer;
   mtlpp::ResourceOptions resourceOptions;
   // The span points to the data in the buffer.
   std::span<T> data;
-  ShaderInput shaderInput;
 };
 
 namespace traits {

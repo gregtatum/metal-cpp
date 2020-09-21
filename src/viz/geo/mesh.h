@@ -41,10 +41,10 @@ class MeshBuffers
 {
 public:
   MeshBuffers(mtlpp::Device& device, Mesh& mesh, mtlpp::ResourceOptions options)
-    : positions(BufferViewList<Vector3>(device, options, mesh.positions))
+    : positions(BufferViewList<Vector3>(mesh.positions, device, options))
     , cells(
-        BufferViewList<std::array<uint32_t, 3>>(device, options, mesh.cells))
-    , normals(BufferViewList<Vector3>(device, options, mesh.normals))
+        BufferViewList<std::array<uint32_t, 3>>(mesh.cells, device, options))
+    , normals(BufferViewList<Vector3>(mesh.normals, device, options))
     , indexCount(mesh.cells.size() * 3)
   {}
 

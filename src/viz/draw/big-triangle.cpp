@@ -52,8 +52,8 @@ BigTriangle::Draw(AutoDraw& draw)
     .vertexStart = 0,
     .vertexCount = 3,
     .vertexInputs = std::vector(
-      { mPositions.shaderInput, draw.GetTickUniforms().shaderInput }),
-    .fragmentInputs = std::vector({ draw.GetTickUniforms().shaderInput }),
+      { mPositions.ShaderInput(), draw.GetTickUniforms().ShaderInput() }),
+    .fragmentInputs = std::vector({ draw.GetTickUniforms().ShaderInput() }),
     // General draw config
     .cullMode = mtlpp::CullMode::None,
     .depthStencilState = mDepth,

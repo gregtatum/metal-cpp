@@ -57,19 +57,6 @@ CreateScene(Device& device)
   auto cpuWrite = mtlpp::ResourceOptions::CpuCacheModeWriteCombined;
   auto library = CreateLibraryForExample(device);
 
-  // Initialize the small spheres.
-  auto initializeSmallSpheres = [&](size_t i) -> ModelUniforms {
-    return {
-      .position = RandomSpherical({ .radius = BIG_SPHERE_RADIUS }),
-      .radius = RandomPow(SMALL_SPHERE_RADIUS_MIN, SMALL_SPHERE_RADIUS_MAX, 3),
-    };
-  };
-
-  // Initialize the big sphere.
-  auto bigSphereUniforms = BufferViewStruct<ModelUniforms>(device, cpuWrite);
-  bigSphereUniforms.data->position = { 0.0f, 0.0f, 0.0f };
-  bigSphereUniforms.data->radius = BIG_SPHERE_RADIUS;
-
   return Scene{
     .bigSphereBuffers = MeshBuffers{ device, bigMesh, cpuWrite },
     .smallSphereBuffers = MeshBuffers{ device, littleMesh, cpuWrite },
@@ -77,7 +64,16 @@ CreateScene(Device& device)
     .sceneUniforms = BufferViewStruct<SceneUniforms>(device, cpuWrite),
 
     .smallSphereUniforms = BufferViewList<ModelUniforms>(
-      device, cpuWrite, SMALL_SPHERE_COUNT, initializeSmallSpheres),
+      [&](size_t i) -> ModelUniforms {
+        return {
+          .position = RandomSpherical({ .radius = BIG_SPHERE_RADIUS }),
+          .radius =
+            RandomPow(SMALL_SPHERE_RADIUS_MIN, SMALL_SPHERE_RADIUS_MAX, 3),
+        };
+      },
+      device,
+      cpuWrite,
+      SMALL_SPHERE_COUNT),
     .smallSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
       .library = library,
@@ -89,7 +85,13 @@ CreateScene(Device& device)
         std::vector{ mtlpp::PixelFormat::BGRA8Unorm },
     }),
 
-    .bigSphereUniforms = bigSphereUniforms,
+    .bigSphereUniforms = BufferViewStruct<ModelUniforms>(
+      {
+        .position = { 0.0f, 0.0f, 0.0f },
+        .radius = BIG_SPHERE_RADIUS,
+      },
+      device,
+      cpuWrite),
     .bigSpherePipeline = viz::InitializeRenderPipeline({
       .device = device,
       .library = library,
@@ -139,11 +141,11 @@ DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
     .indexType = mtlpp::IndexType::UInt32,
     .indexBuffer = scene.smallSphereBuffers.cells.buffer,
     .vertexInputs = std::vector({
-      scene.smallSphereBuffers.positions.shaderInput,
-      scene.smallSphereBuffers.normals.shaderInput,
-      scene.smallSphereUniforms.shaderInput,
+      scene.smallSphereBuffers.positions.ShaderInput(),
+      scene.smallSphereBuffers.normals.ShaderInput(),
+      scene.smallSphereUniforms.ShaderInput(),
     }),
-    .fragmentInputs = std::vector({ scene.smallSphereUniforms.shaderInput }),
+    .fragmentInputs = std::vector({ scene.smallSphereUniforms.ShaderInput() }),
 
     // Optional values.
     .instanceCount = SMALL_SPHERE_COUNT,
@@ -171,13 +173,13 @@ DrawBigSphere(AutoDraw& draw, Tick& tick, Scene& scene)
     .indexType = mtlpp::IndexType::UInt32,
     .indexBuffer = scene.bigSphereBuffers.cells.buffer,
     .vertexInputs = std::vector({
-      scene.bigSphereBuffers.positions.shaderInput,
-      scene.bigSphereBuffers.normals.shaderInput,
-      scene.sceneUniforms.shaderInput,
-      scene.bigSphereUniforms.shaderInput,
+      scene.bigSphereBuffers.positions.ShaderInput(),
+      scene.bigSphereBuffers.normals.ShaderInput(),
+      scene.sceneUniforms.ShaderInput(),
+      scene.bigSphereUniforms.ShaderInput(),
     }),
-    .fragmentInputs = std::vector(
-      { scene.sceneUniforms.shaderInput, scene.bigSphereUniforms.shaderInput }),
+    .fragmentInputs = std::vector({ scene.sceneUniforms.ShaderInput(),
+                                    scene.bigSphereUniforms.ShaderInput() }),
 
     // General draw config
     .cullMode = mtlpp::CullMode::Front,

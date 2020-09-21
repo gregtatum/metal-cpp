@@ -281,8 +281,6 @@ AutoDraw::AutoDraw(mtlpp::Device& aDevice,
   : mCommandQueue(aCommandQueue)
   , mTick(aTick)
   , mTickUniforms(BufferViewStruct<VizTickUniforms>(
-      aDevice,
-      mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
       VizTickUniforms{
         .milliseconds = aTick.milliseconds,
         .seconds = aTick.seconds,
@@ -291,7 +289,9 @@ AutoDraw::AutoDraw(mtlpp::Device& aDevice,
         .width = aTick.width,
         .height = aTick.height,
         .isMouseDown = aTick.isMouseDown,
-      }))
+      },
+      aDevice,
+      mtlpp::ResourceOptions::CpuCacheModeWriteCombined))
 {
   if (mTick.traceFrames > 0) {
     mTick.traceFramesUntilTick =
