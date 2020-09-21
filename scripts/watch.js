@@ -101,10 +101,10 @@ function listenToKeyboard() {
         }
         closeAndRebuild();
         break;
-      case "r":
+      case "l":
         closeSubprocess();
         clearConsole();
-        runExample();
+        runExample({ LOG_SHADER_CALLS: "1" });
         keepExampleClosed = false;
         break;
       case "k":
@@ -141,13 +141,14 @@ function printShortcuts() {
   console.log("  c - Clean the C++ files");
   console.log("  a - Clean all the files");
   console.log("  r - Restart the example");
+  console.log("  l - Log shaders");
   console.log("  k - Kill process");
   console.log("  q - Quit");
   console.log("  1-9 - Do a GPU trace of a certain length");
   console.log("");
 }
 
-function runExample() {
+function runExample(env = {}) {
   if (exampleSubProcess) {
     throw new Error(
       "A subprocess was still running when launching another example."
@@ -166,7 +167,7 @@ function runExample() {
       // stderr
       "inherit",
     ],
-    env: metalValidation,
+    env: { ...metalValidation, ...env },
   });
 
   exampleSubProcess.stdin.setEncoding("utf-8");
