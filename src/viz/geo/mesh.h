@@ -40,6 +40,10 @@ VIZ_DEBUG_OBJ(mesh, Mesh, {
 class MeshBuffers
 {
 public:
+  // Move only
+  MeshBuffers(MeshBuffers&& other) = default;
+  MeshBuffers& operator=(MeshBuffers&& other) = default;
+
   MeshBuffers(mtlpp::Device& device, Mesh& mesh, mtlpp::ResourceOptions options)
     : positions(BufferViewList<Vector3>(mesh.positions, device, options))
     , cells(

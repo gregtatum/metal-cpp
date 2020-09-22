@@ -80,6 +80,10 @@ CreateBufferFromList(Device& device, mtlpp::ResourceOptions options, List& list)
 class BufferView
 {
 public:
+  // Move only, this is pointing to a resource.
+  BufferView(BufferView&& other) = default;
+  BufferView& operator=(BufferView&& other) = default;
+
   BufferView(Device& device, mtlpp::ResourceOptions options, uint32_t length)
     : buffer(device.NewBuffer(length, options))
     , resourceOptions(options)
@@ -104,8 +108,8 @@ class BufferViewStruct : public BufferView
 {
 public:
   // Move only
-  BufferViewStruct(BufferViewStruct&& other);
-  BufferViewStruct& operator=(BufferViewStruct&& other);
+  BufferViewStruct(BufferViewStruct&& other) = default;
+  BufferViewStruct& operator=(BufferViewStruct&& other) = default;
 
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options)
     : BufferView(device, options, sizeof(T))
@@ -130,8 +134,8 @@ class BufferViewList : public BufferView
 {
 public:
   // Move only
-  BufferViewList(BufferViewList&& other);
-  BufferViewList& operator=(BufferViewList&& other);
+  BufferViewList(BufferViewList&& other) = default;
+  BufferViewList& operator=(BufferViewList&& other) = default;
 
   // Initialize the BufferViewList by pointing at some data.
   template<typename List>
@@ -181,6 +185,10 @@ struct Texture2DInitializer
  */
 class Texture2D
 {
+  // Move only
+  Texture2D(Texture2D&& other) = default;
+  Texture2D& operator=(Texture2D&& other) = default;
+
 public:
   explicit Texture2D(Texture2DInitializer&& initializer);
 
@@ -946,15 +954,15 @@ struct DrawInitializer
 class AutoDraw
 {
 public:
+  // Not copyable or movable
+  AutoDraw(const AutoDraw&) = delete;
+  AutoDraw& operator=(const AutoDraw&) = delete;
+
   AutoDraw(mtlpp::Device& aDevice,
            mtlpp::CommandQueue& aCommandQueue,
            Tick& aTick);
 
   ~AutoDraw();
-
-  // Delete copy and move.
-  AutoDraw(const AutoDraw&) = delete;
-  AutoDraw& operator=(const AutoDraw) = delete;
 
   /**
    * Call the clear functions to clear the next draw call. Typically this will

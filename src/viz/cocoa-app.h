@@ -12,6 +12,10 @@ template<typename T>
 class Vec2
 {
 public:
+  // Allow copy
+  Vec2(const Vec2& other) = default;
+  Vec2& operator=(const Vec2& other) = default;
+
   Vec2(T aX, T aY)
     : x(aX)
     , y(aY){};
@@ -25,6 +29,11 @@ using WallClock = std::chrono::time_point<std::chrono::system_clock>;
 class Tick
 {
 public:
+  // Not copyable or movable, this should be instantiated once, but then only
+  // shared via reference. It's referenced from at least one other thread.
+  Tick(const Tick&) = delete;
+  Tick& operator=(const Tick&) = delete;
+
   Tick(double aWidth, double aHeight)
     : width(aWidth)
     , height(aHeight){};

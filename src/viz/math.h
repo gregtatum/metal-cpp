@@ -12,6 +12,10 @@ namespace viz {
 class Vector3 : public GLKVector3
 {
 public:
+  // Allow copy
+  Vector3(const Vector3& other) = default;
+  Vector3& operator=(const Vector3& other) = default;
+
   Vector3(GLKVector3 v)
     : GLKVector3(v){};
 
@@ -182,6 +186,10 @@ public:
 class Vector2 : public GLKVector2
 {
 public:
+  // Allow copy
+  Vector2(const Vector2& other) = default;
+  Vector2& operator=(const Vector2& other) = default;
+
   Vector2(GLKVector2 v)
     : GLKVector2(v){};
 
@@ -193,6 +201,10 @@ public:
 class Matrix3 : public GLKMatrix3
 {
 public:
+  // Allow copy
+  Matrix3(const Matrix3& other) = default;
+  Matrix3& operator=(const Matrix3& other) = default;
+
   Matrix3(GLKMatrix3 m)
     : GLKMatrix3(m){};
 
@@ -207,6 +219,10 @@ public:
 class Matrix4 : public GLKMatrix4
 {
 public:
+  // Allow copy
+  Matrix4(const Matrix4& other) = default;
+  Matrix4& operator=(const Matrix4& other) = default;
+
   Matrix4(GLKMatrix4 m)
     : GLKMatrix4(m){};
 
