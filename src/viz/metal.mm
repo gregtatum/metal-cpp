@@ -182,7 +182,8 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
     auto fn = initializer.library.NewFunction(name);
     if (IsNil<id<MTLFunction>>(fn)) {
       throw new ErrorMessage(
-        std::string{ "Vertex function \"" } + std::string{ name } +
+        std::string{ "Vertex function \"" } +
+        initializer.vertexFunction.value() +
         std::string{ "\" was not found when initializing " } +
         std::string{ label } + std::string{ "\n" });
     }
@@ -201,9 +202,10 @@ InitializeRenderPipeline(RenderPipelineInitializer&& initializer)
     }
   }
 
-  if (initializer.depthAttachmentPixelFormat)
+  if (initializer.depthAttachmentPixelFormat) {
     descriptor.SetDepthAttachmentPixelFormat(
       initializer.depthAttachmentPixelFormat.value());
+  }
 
   for (size_t i = 0; i < initializer.colorAttachmentPixelFormats.size(); i++) {
     descriptor.GetColorAttachments()[i].SetPixelFormat(
@@ -349,6 +351,50 @@ AutoDraw::GetTickUniforms()
   return mTickUniforms;
 }
 
+struct SetVertexBufferVisitor
+{
+
+  SetVertexBufferVisitor(RenderCommandEncoder& aEncoder, uint32_t aIndex)
+    : renderCommandEncoder(aEncoder)
+    , index(aIndex)
+  {}
+
+  void operator()(BufferView& bufferView) const
+  {
+    renderCommandEncoder.SetVertexBuffer(bufferView.buffer, 0, index);
+  }
+
+  void operator()(Texture2D& texture) const
+  {
+    renderCommandEncoder.SetVertexTexture(texture.texture, index);
+  }
+
+  RenderCommandEncoder& renderCommandEncoder;
+  uint32_t index;
+};
+
+struct SetFragmentBufferVisitor
+{
+
+  SetFragmentBufferVisitor(RenderCommandEncoder& aEncoder, uint32_t aIndex)
+    : renderCommandEncoder(aEncoder)
+    , index(aIndex)
+  {}
+
+  void operator()(BufferView& bufferView) const
+  {
+    renderCommandEncoder.SetFragmentBuffer(bufferView.buffer, 0, index);
+  }
+
+  void operator()(Texture2D& texture) const
+  {
+    renderCommandEncoder.SetFragmentTexture(texture.texture, index);
+  }
+
+  RenderCommandEncoder& renderCommandEncoder;
+  uint32_t index;
+};
+
 void
 AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
 {
@@ -389,13 +435,13 @@ AutoDraw::DrawIndexed(DrawIndexedInitializer&& initializer)
   renderCommandEncoder.SetRenderPipelineState(renderPipelineState);
 
   for (size_t i = 0; i < vertexInputs.size(); i++) {
-    auto& vertexInput = vertexInputs[i];
-    vertexInput.SetVertex(renderCommandEncoder, i);
+    std::visit(SetVertexBufferVisitor(renderCommandEncoder, i),
+               vertexInputs[i]);
   }
 
   for (size_t i = 0; i < fragmentInputs.size(); i++) {
-    auto& fragmentInput = fragmentInputs[i];
-    fragmentInput.SetFragment(renderCommandEncoder, i);
+    std::visit(SetFragmentBufferVisitor(renderCommandEncoder, i),
+               fragmentInputs[i]);
   }
 
   // Handle the optional configs.
@@ -487,15 +533,15 @@ AutoDraw::Draw(DrawInitializer&& initializer)
   ReleaseAssert(vertexInputs.size() > 0,
                 "There must be at least 1 vertex input for a draw call.");
   for (size_t i = 0; i < vertexInputs.size(); i++) {
-    auto& vertexInput = vertexInputs[i];
-    vertexInput.SetVertex(renderCommandEncoder, i);
+    std::visit(SetVertexBufferVisitor(renderCommandEncoder, i),
+               vertexInputs[i]);
   }
 
   ReleaseAssert(fragmentInputs.size() > 0,
                 "There must be at least 1 fragment buffer for a draw call.");
   for (size_t i = 0; i < fragmentInputs.size(); i++) {
-    auto& fragmentInput = fragmentInputs[i];
-    fragmentInput.SetFragment(renderCommandEncoder, i);
+    std::visit(SetFragmentBufferVisitor(renderCommandEncoder, i),
+               fragmentInputs[i]);
   }
 
   // Handle the optional configs.
@@ -528,59 +574,6 @@ AutoDraw::Draw(DrawInitializer&& initializer)
   renderCommandEncoder.Draw(primitiveType, vertexStart, vertexCount);
 
   renderCommandEncoder.EndEncoding();
-}
-
-ShaderInput::ShaderInput(mtlpp::Buffer* buffer)
-  : pointer(static_cast<void*>(buffer))
-  , tag(Tag::Buffer)
-{}
-
-ShaderInput::ShaderInput(mtlpp::Texture* texture)
-  : pointer(static_cast<void*>(texture))
-  , tag(Tag::Texture)
-{}
-
-void
-ShaderInput::SetFragment(mtlpp::RenderCommandEncoder& renderCommandEncoder,
-                         uint32_t index)
-{
-  ReleaseAssert(pointer != nullptr, "ShaderInput pointer was nullptr.");
-  switch (tag) {
-    case Buffer: {
-      auto buffer = static_cast<mtlpp::Buffer*>(pointer);
-      renderCommandEncoder.SetFragmentBuffer(*buffer, 0, index);
-      break;
-    }
-    case Texture: {
-      auto texture = static_cast<mtlpp::Texture*>(pointer);
-      renderCommandEncoder.SetFragmentTexture(*texture, index);
-      break;
-    }
-    default: {
-      throw new ErrorMessage("Unknown ShaderInput in SetFragment");
-    }
-  }
-}
-
-void
-ShaderInput::SetVertex(mtlpp::RenderCommandEncoder& renderCommandEncoder,
-                       uint32_t index)
-{
-  ReleaseAssert(pointer != nullptr, "ShaderInput pointer was nullptr.");
-  switch (tag) {
-    case Buffer: {
-      auto buffer = static_cast<mtlpp::Buffer*>(pointer);
-      renderCommandEncoder.SetVertexBuffer(*buffer, 0, index);
-      break;
-    }
-    case Texture: {
-      auto texture = static_cast<mtlpp::Texture*>(pointer);
-      renderCommandEncoder.SetVertexTexture(*texture, index);
-      break;
-    }
-    default:
-      throw new ErrorMessage("Unknown ShaderInput in SetFragment");
-  }
 }
 
 } // namespace viz

@@ -1,6 +1,7 @@
 #include <GLKit/GLKMath.h>
 #include <assert.h> // assert
 #include <cmath>
+#include <functional>
 #include <iostream> // std::cout
 #include <math.h>   // fmod
 #include <span>
@@ -141,11 +142,11 @@ DrawSmallSpheres(AutoDraw& draw, Tick& tick, Scene& scene)
     .indexType = mtlpp::IndexType::UInt32,
     .indexBuffer = scene.smallSphereBuffers.cells.buffer,
     .vertexInputs = std::vector({
-      scene.smallSphereBuffers.positions.ShaderInput(),
-      scene.smallSphereBuffers.normals.ShaderInput(),
-      scene.smallSphereUniforms.ShaderInput(),
+      scene.smallSphereBuffers.positions.Ref(),
+      scene.smallSphereBuffers.normals.Ref(),
+      scene.smallSphereUniforms.Ref(),
     }),
-    .fragmentInputs = std::vector({ scene.smallSphereUniforms.ShaderInput() }),
+    .fragmentInputs = std::vector({ scene.smallSphereUniforms.Ref() }),
 
     // Optional values.
     .instanceCount = SMALL_SPHERE_COUNT,
@@ -173,13 +174,13 @@ DrawBigSphere(AutoDraw& draw, Tick& tick, Scene& scene)
     .indexType = mtlpp::IndexType::UInt32,
     .indexBuffer = scene.bigSphereBuffers.cells.buffer,
     .vertexInputs = std::vector({
-      scene.bigSphereBuffers.positions.ShaderInput(),
-      scene.bigSphereBuffers.normals.ShaderInput(),
-      scene.sceneUniforms.ShaderInput(),
-      scene.bigSphereUniforms.ShaderInput(),
+      scene.bigSphereBuffers.positions.Ref(),
+      scene.bigSphereBuffers.normals.Ref(),
+      scene.sceneUniforms.Ref(),
+      scene.bigSphereUniforms.Ref(),
     }),
-    .fragmentInputs = std::vector({ scene.sceneUniforms.ShaderInput(),
-                                    scene.bigSphereUniforms.ShaderInput() }),
+    .fragmentInputs =
+      std::vector({ scene.sceneUniforms.Ref(), scene.bigSphereUniforms.Ref() }),
 
     // General draw config
     .cullMode = mtlpp::CullMode::Front,

@@ -7,18 +7,18 @@ BigTriangle::BigTriangle(Device& device,
                          mtlpp::Library& library,
                          const char* label,
                          const char* fragmentFunction)
-  : mPositions(
-      BufferViewList<Vector2>(device,
-                              mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
-                              std::vector<Vector2>{
-                                { -1.0, -1.0 },
-                                { -1.0, 4.0 },
-                                { 4.0, -1.0 },
-                              }))
-  , mCells(BufferViewList<std::array<uint32_t, 3>>(
+  : mPositions(BufferViewList<Vector2>(
+      std::vector<Vector2>{
+        { -1.0, -1.0 },
+        { -1.0, 4.0 },
+        { 4.0, -1.0 },
+      },
       device,
-      mtlpp::ResourceOptions::CpuCacheModeWriteCombined,
-      std::vector<std::array<uint32_t, 3>>{ { 0, 1, 2 } }))
+      mtlpp::ResourceOptions::CpuCacheModeWriteCombined))
+  , mCells(BufferViewList<std::array<uint32_t, 3>>(
+      std::vector<std::array<uint32_t, 3>>{ { 0, 1, 2 } },
+      device,
+      mtlpp::ResourceOptions::CpuCacheModeWriteCombined))
   , mTickUniforms(BufferViewStruct<VizTickUniforms>(
       device,
       mtlpp::ResourceOptions::CpuCacheModeWriteCombined))
@@ -51,9 +51,9 @@ BigTriangle::Draw(AutoDraw& draw)
     .primitiveType = mtlpp::PrimitiveType::Triangle,
     .vertexStart = 0,
     .vertexCount = 3,
-    .vertexInputs = std::vector(
-      { mPositions.ShaderInput(), draw.GetTickUniforms().ShaderInput() }),
-    .fragmentInputs = std::vector({ draw.GetTickUniforms().ShaderInput() }),
+    .vertexInputs =
+      std::vector({ mPositions.Ref(), draw.GetTickUniforms().Ref() }),
+    .fragmentInputs = std::vector({ draw.GetTickUniforms().Ref() }),
     // General draw config
     .cullMode = mtlpp::CullMode::None,
     .depthStencilState = mDepth,

@@ -5,16 +5,21 @@
 #include "viz/debug.h"
 #include "viz/metal.h"
 #include "viz/shader-utils.h"
-#include <exception> // std::exception
+#include <exception>  // std::exception
+#include <functional> // std::ref
 #include <optional>
 #include <span>    // std::span
 #include <sstream> // std::ostringstream
 #include <typeinfo>
+#include <variant>
 #include <vector> // std::vector
 
 using namespace mtlpp;
 
 namespace viz {
+
+class Texture2D;
+class BufferView;
 
 /**
  * This class encapsulates the underlying NSError object. I wasn't satisfied
@@ -56,30 +61,9 @@ CreateLibraryFromSource(Device device,
 mtlpp::Library
 CreateLibraryForExample(Device device);
 
-/**
- * This class is a discriminating union of anything that can be used as an input
- * to a fragment or vertex shader function.
- */
-class ShaderInput
-{
-  enum Tag
-  {
-    Buffer,
-    Texture
-  };
-
-public:
-  ShaderInput(mtlpp::Buffer* buffer);
-  ShaderInput(mtlpp::Texture* texture);
-  void SetFragment(mtlpp::RenderCommandEncoder& renderCommandEncoder,
-                   uint32_t index);
-  void SetVertex(mtlpp::RenderCommandEncoder& renderCommandEncoder,
-                 uint32_t index);
-
-private:
-  void* pointer;
-  Tag tag;
-};
+using BufferVariant = std::variant<std::reference_wrapper<viz::BufferView>,
+                                   std::reference_wrapper<viz::Texture2D>>;
+using BufferRefs = std::vector<BufferVariant>;
 
 /**
  * Creates a metal Buffer with a std::vector or std::span. It handles computing
@@ -93,18 +77,38 @@ CreateBufferFromList(Device& device, mtlpp::ResourceOptions options, List& list)
   return device.NewBuffer(&list[0], bytes, options);
 }
 
-template<typename T>
-class BufferViewStruct
+class BufferView
 {
 public:
-  // Copy
-  BufferViewStruct(const BufferViewStruct& other) = delete;
-  // Move
-  BufferViewStruct& operator=(const BufferViewStruct&) = default;
+  BufferView(Device& device, mtlpp::ResourceOptions options, uint32_t length)
+    : buffer(device.NewBuffer(length, options))
+    , resourceOptions(options)
+  {}
+
+  BufferView(Device& device,
+             mtlpp::ResourceOptions options,
+             const void* pointer,
+             uint32_t length)
+    : buffer(device.NewBuffer(pointer, length, options))
+    , resourceOptions(options)
+  {}
+
+  BufferVariant Ref() { return BufferVariant{ std::ref(*this) }; }
+
+  mtlpp::Buffer buffer;
+  mtlpp::ResourceOptions resourceOptions;
+};
+
+template<typename T>
+class BufferViewStruct : public BufferView
+{
+public:
+  // Move only
+  BufferViewStruct(BufferViewStruct&& other);
+  BufferViewStruct& operator=(BufferViewStruct&& other);
 
   BufferViewStruct(Device& device, mtlpp::ResourceOptions options)
-    : buffer(device.NewBuffer(sizeof(T), options))
-    , resourceOptions(options)
+    : BufferView(device, options, sizeof(T))
     , data(static_cast<T*>(buffer.GetContents()))
 
   {
@@ -112,34 +116,27 @@ public:
   }
 
   BufferViewStruct(T&& value, Device& device, mtlpp::ResourceOptions options)
-    : buffer(device.NewBuffer(sizeof(T), options))
-    , resourceOptions(options)
+    : BufferView(device, options, sizeof(T))
     , data(static_cast<T*>(buffer.GetContents()))
   {
     *data = value;
   }
 
-  viz::ShaderInput ShaderInput() { return viz::ShaderInput(&buffer); };
-
-  mtlpp::Buffer buffer;
-  mtlpp::ResourceOptions resourceOptions;
   T* data;
 };
 
 template<typename T>
-class BufferViewList
+class BufferViewList : public BufferView
 {
 public:
-  // Copy
-  BufferViewList(const BufferViewList&) = delete;
-  // Move
-  BufferViewList& operator=(const BufferViewList&) = default;
+  // Move only
+  BufferViewList(BufferViewList&& other);
+  BufferViewList& operator=(BufferViewList&& other);
 
   // Initialize the BufferViewList by pointing at some data.
   template<typename List>
   BufferViewList(List&& list, Device& device, mtlpp::ResourceOptions options)
-    : buffer(device.NewBuffer(&list[0], sizeof(list[0]) * list.size(), options))
-    , resourceOptions(options)
+    : BufferView(device, options, &list[0], sizeof(list[0]) * list.size())
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), list.size() })
   {}
 
@@ -149,8 +146,7 @@ public:
                  Device& device,
                  mtlpp::ResourceOptions options,
                  size_t size)
-    : buffer(device.NewBuffer(sizeof(T) * size, options))
-    , resourceOptions(options)
+    : BufferView(device, options, sizeof(T) * size)
     , data(std::span<T>{ static_cast<T*>(buffer.GetContents()), size })
   {
     for (size_t i = 0; i < size; i++) {
@@ -158,12 +154,45 @@ public:
     }
   }
 
-  viz::ShaderInput ShaderInput() { return viz::ShaderInput(&buffer); };
-
-  mtlpp::Buffer buffer;
-  mtlpp::ResourceOptions resourceOptions;
   // The span points to the data in the buffer.
   std::span<T> data;
+};
+
+struct Texture2DInitializer
+{
+  mtlpp::Device& device;
+  mtlpp::PixelFormat pixelFormat;
+  uint32_t width;
+  uint32_t height;
+  bool mipmapped = false;
+
+  std::optional<mtlpp::TextureType> textureType;
+  std::optional<uint32_t> mipmapLevelCount;
+  std::optional<uint32_t> sampleCount;
+  std::optional<uint32_t> arrayLength;
+  std::optional<mtlpp::ResourceOptions> resourceOptions;
+  std::optional<mtlpp::CpuCacheMode> cpuCacheMode;
+  std::optional<mtlpp::StorageMode> storageMode;
+  std::optional<mtlpp::TextureUsage> usage;
+};
+
+/**
+ * Initialize and draw to a texture.
+ */
+class Texture2D
+{
+public:
+  explicit Texture2D(Texture2DInitializer&& initializer);
+
+  // Set the data with a user-provided callback function.
+  // The function signature is:
+  //
+  // (uint32_t x, uint32_t y) -> Format
+  template<typename Format, typename Fn>
+  void SetData(Fn fn);
+
+  mtlpp::TextureDescriptor descriptor;
+  mtlpp::Texture texture;
 };
 
 namespace traits {
@@ -852,8 +881,8 @@ struct DrawIndexedInitializer
   uint32_t indexCount;
   mtlpp::IndexType indexType;
   const mtlpp::Buffer& indexBuffer;
-  std::vector<ShaderInput> vertexInputs;
-  std::vector<ShaderInput> fragmentInputs;
+  BufferRefs vertexInputs;
+  BufferRefs fragmentInputs;
 
   // Optional config:
   std::optional<uint32_t> instanceCount;
@@ -868,8 +897,8 @@ struct DrawInitializer
   mtlpp::PrimitiveType primitiveType;
   uint32_t vertexStart;
   uint32_t vertexCount;
-  std::vector<ShaderInput> vertexInputs;
-  std::vector<ShaderInput> fragmentInputs;
+  BufferRefs vertexInputs;
+  BufferRefs fragmentInputs;
 
   // Optional config:
   std::optional<mtlpp::CullMode> cullMode;
